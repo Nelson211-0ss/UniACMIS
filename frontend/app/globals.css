@@ -1,0 +1,429 @@
+/*
+ * Design tokens from the "Academic Nexus" Material-3 palette
+ * (~/Downloads/stitch_modern_student_information_portal(4)/DESIGN.md).
+ *
+ * Kept as custom properties so the whole shell re-themes from one block, and so a
+ * university with its own colours changes these values rather than the components.
+ */
+
+:root {
+  --surface: #f9f9ff;
+  --surface-dim: #cfdaf2;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f0f3ff;
+  --surface-container: #e7eeff;
+  --surface-container-high: #dee8ff;
+  --surface-container-highest: #d8e3fb;
+  --on-surface: #111c2d;
+  --on-surface-variant: #43474e;
+  --outline: #74777f;
+  --outline-variant: #c4c6cf;
+
+  --primary: #002045;
+  --on-primary: #ffffff;
+  --primary-container: #1a365d;
+  --on-primary-container: #86a0cd;
+
+  --secondary: #4b41e1;
+  --on-secondary: #ffffff;
+
+  --tertiary: #00252d;
+  --tertiary-container: #003c47;
+  --on-tertiary-container: #00aecb;
+
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  --warning: #8a5300;
+  --warning-container: #ffddb3;
+  --success: #14652f;
+  --success-container: #b8f2c4;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --gap: 16px;
+
+  --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #111621;
+    --surface-dim: #0b0f17;
+    --surface-container-lowest: #0b0f17;
+    --surface-container-low: #161c28;
+    --surface-container: #1b2230;
+    --surface-container-high: #212938;
+    --surface-container-highest: #263143;
+    --on-surface: #ecf1ff;
+    --on-surface-variant: #c4c6cf;
+    --outline: #8c9199;
+    --outline-variant: #3a4150;
+
+    --primary: #adc7f7;
+    --on-primary: #001b3c;
+    --primary-container: #2d476f;
+    --on-primary-container: #d6e3ff;
+
+    --secondary: #c3c0ff;
+    --on-secondary: #0f0069;
+
+    --error: #ffb4ab;
+    --on-error: #690005;
+    --error-container: #93000a;
+    --on-error-container: #ffdad6;
+
+    --warning: #ffddb3;
+    --warning-container: #5c3f00;
+    --success: #b8f2c4;
+    --success-container: #14652f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /* 16px minimum: anything smaller makes mobile Safari and Chrome zoom on focus,
+     which throws the layout off on the phones most students actually use. */
+  font-size: 16px;
+  font-family: var(--font);
+  background: var(--surface);
+  color: var(--on-surface);
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--secondary);
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 12px 16px;
+  background: var(--primary);
+  color: var(--on-primary);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar__brand {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-right: auto;
+}
+
+.topbar__user {
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.nav {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--outline-variant);
+}
+
+.nav a {
+  display: block;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  color: var(--on-surface);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.nav a:hover,
+.nav a[aria-current="page"] {
+  background: var(--surface-container-high);
+  font-weight: 600;
+}
+
+.nav__section {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  margin: 16px 0 8px 12px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    flex-direction: column;
+  }
+  .nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--outline-variant);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+  }
+  .nav a {
+    margin: 0;
+  }
+  .nav__section {
+    display: none;
+  }
+  .content {
+    padding: 16px;
+  }
+}
+
+/* -------------------------------------------------------------- components */
+
+.card {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: var(--gap);
+}
+
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+}
+
+.card p.muted {
+  margin: 0 0 16px;
+  color: var(--on-surface-variant);
+  font-size: 0.9375rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  color: var(--on-surface-variant);
+  margin: 0 0 24px;
+}
+
+.grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--on-surface);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-sm);
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--secondary);
+  outline-offset: 1px;
+}
+
+.field .hint {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  margin-top: 4px;
+}
+
+button,
+.button {
+  font: inherit;
+  font-weight: 600;
+  padding: 11px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.alert {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  margin-bottom: var(--gap);
+}
+
+.alert--error {
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.alert--warning {
+  background: var(--warning-container);
+  color: var(--warning);
+}
+
+.alert--success {
+  background: var(--success-container);
+  color: var(--success);
+}
+
+/* --------------------------------------------------- connection + outbox */
+
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.conn__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6ee7a0;
+}
+
+.conn--offline .conn__dot {
+  background: #ffb4ab;
+}
+
+.queue {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+th {
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--surface-container-high);
+}
+
+.pill--pending {
+  background: var(--warning-container);
+  color: var(--warning);
+}
+
+.pill--synced {
+  background: var(--success-container);
+  color: var(--success);
+}
+
+.pill--failed {
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+/* ----------------------------------------------------------------- login */
+
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(160deg, var(--surface-container) 0%, var(--surface) 60%);
+}
+
+.login__card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+
+.login__title {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.login__sub {
+  margin: 0 0 24px;
+  color: var(--on-surface-variant);
+  font-size: 0.9375rem;
+}

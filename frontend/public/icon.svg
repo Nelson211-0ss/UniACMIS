@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="UniACMIS">
+  <rect width="512" height="512" rx="96" fill="#002045"/>
+  <!-- Graduation cap: a mortarboard over a stack, drawn simply so it stays legible
+       at 48px on a low-end Android launcher. -->
+  <path d="M256 128 96 200l160 72 160-72-160-72z" fill="#adc7f7"/>
+  <path d="M144 232v72c0 26 50 48 112 48s112-22 112-48v-72l-112 50-112-50z" fill="#86a0cd"/>
+  <path d="M400 208v96a12 12 0 0 1-24 0v-96h24z" fill="#4cd7f6"/>
+</svg>
