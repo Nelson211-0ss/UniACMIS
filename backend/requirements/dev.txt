@@ -1,0 +1,10 @@
+-r base.txt
+
+pytest>=8.3,<9.0
+pytest-django>=4.9,<5.0
+pytest-cov>=5.0
+factory-boy>=3.3,<4.0
+ruff>=0.6
+black>=24.8
+import-linter>=2.0,<3.0
+django-extensions>=3.2

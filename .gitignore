@@ -1,0 +1,48 @@
+# Environment
+.env
+.env.local
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Django
+*.sqlite3
+/backend/media/
+/backend/staticfiles/
+/backend/logs/
+
+# Celery beat writes its schedule database into the working directory
+celerybeat-schedule*
+celerybeat.pid
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.npm/
+*.tsbuildinfo
+next-env.d.ts
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local data
+/data/
+/backups/

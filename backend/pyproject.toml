@@ -1,0 +1,166 @@
+[project]
+name = "uniacmis-backend"
+version = "0.1.0"
+description = "University Academic Management Information System — South Sudan"
+requires-python = ">=3.12"
+
+# ----------------------------------------------------------------------- black
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = '''
+/(
+  | migrations
+)/
+'''
+
+# ------------------------------------------------------------------------ ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["migrations", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "DJ",  # flake8-django
+    "C4",  # comprehensions
+    "SIM", # simplify
+    "RUF",
+]
+ignore = [
+    "E501",    # line length is black's job
+    "RUF012",  # mutable class attrs in Django models are idiomatic
+    "B008",    # DRF/Django use callables in defaults
+    # Docstrings and comments here deliberately use en/em dashes and × (as in
+    # "role × endpoint"). Flagging them as "ambiguous Unicode" would push the
+    # prose toward ASCII for no benefit.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["S101"]
+"*/settings/*" = ["F403", "F405"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+# ---------------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py", "tests.py"]
+testpaths = ["apps", "tests"]
+# `--ds` is passed explicitly because an ambient DJANGO_SETTINGS_MODULE in the
+# environment (the container sets config.settings.dev so runserver works)
+# overrides the ini value above. Without this, the suite silently runs against
+# dev settings — throttling on, real password hashing — and login tests fail with
+# 429s that look like application bugs.
+addopts = "--ds=config.settings.test --reuse-db --strict-markers -ra"
+markers = [
+    "integration: cross-module flows through service interfaces",
+    "concurrency: needs real parallel transactions (no --reuse-db shortcuts)",
+]
+filterwarnings = ["error::DeprecationWarning:apps.*"]
+
+# -------------------------------------------------------------------- coverage
+[tool.coverage.run]
+source = ["apps"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/test_*.py",
+    "*/apps.py",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+skip_covered = false
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",
+]
+
+# --------------------------------------------------------------- import-linter
+# Enforces the module boundaries in docs/ARCHITECTURE.md §4. Without this the
+# "loosely coupled modules" principle decays within a sprint or two.
+[tool.importlinter]
+root_packages = ["apps"]
+include_external_packages = true
+
+# Test modules deliberately reach across boundaries to build realistic fixtures —
+# a registry test needs to create a real faculty and grading scale. The contracts
+# govern production code paths, so `apps.*.tests` is ignored in all three.
+
+[[tool.importlinter.contracts]]
+name = "Cross-cutting layers: a lower layer never imports a higher one"
+type = "layers"
+layers = [
+    "apps.registry",
+    "apps.curriculum",
+    "apps.academics",
+    "apps.accounts",
+    "apps.audit",
+    "apps.core",
+]
+ignore_imports = ["apps.*.tests.** -> **"]
+# Not every contract has a test import to ignore, and a pattern that matches
+# nothing is an error by default.
+unmatched_ignore_imports_alerting = "warn"
+
+[[tool.importlinter.contracts]]
+name = "core is infrastructure only — it must not know about any domain app"
+type = "forbidden"
+source_modules = ["apps.core"]
+forbidden_modules = [
+    "apps.accounts",
+    "apps.audit",
+    "apps.academics",
+    "apps.curriculum",
+    "apps.registry",
+]
+ignore_imports = ["apps.*.tests.** -> **"]
+# Not every contract has a test import to ignore, and a pattern that matches
+# nothing is an error by default.
+unmatched_ignore_imports_alerting = "warn"
+# core reaches domain behaviour through ports (apps/core/ports.py) that the
+# domain apps register into at AppConfig.ready(), never by importing them. This is
+# why `seed_demo` lives in `registry` (the top layer) rather than in `core`: it
+# orchestrates every app, so it belongs above them, not underneath.
+
+[[tool.importlinter.contracts]]
+name = "No app imports another app's models module directly"
+type = "forbidden"
+source_modules = [
+    "apps.academics",
+    "apps.curriculum",
+    "apps.registry",
+]
+forbidden_modules = [
+    "apps.academics.models",
+    "apps.curriculum.models",
+    "apps.registry.models",
+]
+allow_indirect_imports = true
+ignore_imports = [
+    "apps.*.tests.** -> **",
+    # The demo seeder's entire job is to construct data across every app. Routing
+    # each fixture row through a service would be indirection with no reader —
+    # it is a development-only command, not a production code path.
+    "apps.registry.management.commands.seed_demo -> **",
+]
+# Not every contract has a test import to ignore, and a pattern that matches
+# nothing is an error by default.
+unmatched_ignore_imports_alerting = "warn"
+# Django FKs use lazy string references ("curriculum.Programme"), so a real
+# dependency never needs a models import. Cross-app reads go through services.py —
+# e.g. registry asks academics.services.calendar for an intake year's name rather
+# than importing AcademicYear.
