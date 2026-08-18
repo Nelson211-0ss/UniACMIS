@@ -15,6 +15,15 @@
 
 import { useEffect, useState } from "react";
 
+import {
+  AlertCircleIcon,
+  CheckCircleIcon,
+  LayersIcon,
+  MapPinIcon,
+  PhoneIcon,
+  UserIcon,
+  WifiOffIcon,
+} from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
 import * as outbox from "@/lib/outbox";
 import { flush } from "@/lib/sync";
@@ -56,12 +65,20 @@ const EMPTY_FORM = {
   entry_academic_year_id: "",
 };
 
+const NOTICE_ICON = {
+  success: CheckCircleIcon,
+  warning: WifiOffIcon,
+  error: AlertCircleIcon,
+} as const;
+
 export default function AdmitStudentPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [programmes, setProgrammes] = useState<Option[]>([]);
   const [years, setYears] = useState<Option[]>([]);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<{ kind: string; text: string } | null>(null);
+  const [notice, setNotice] = useState<{ kind: keyof typeof NOTICE_ICON; text: string } | null>(
+    null,
+  );
   const [referenceLoadFailed, setReferenceLoadFailed] = useState(false);
 
   useEffect(() => {
@@ -170,6 +187,8 @@ export default function AdmitStudentPage() {
     }
   }
 
+  const NoticeIcon = notice ? NOTICE_ICON[notice.kind] : null;
+
   return (
     <>
       <h1>Admit a student</h1>
@@ -178,182 +197,219 @@ export default function AdmitStudentPage() {
         available.
       </p>
 
-      {notice ? (
-        <div className={`alert alert--${notice.kind}`}>{notice.text}</div>
+      {notice && NoticeIcon ? (
+        <div className={`alert alert--${notice.kind}`} role="status">
+          <NoticeIcon size={18} />
+          <span>{notice.text}</span>
+        </div>
       ) : null}
 
       {referenceLoadFailed ? (
         <div className="alert alert--warning">
-          Programmes and academic years could not be loaded. Open this page once while
-          online so they are cached for offline use.
+          <AlertCircleIcon size={18} />
+          <span>
+            Programmes and academic years could not be loaded. Open this page once
+            while online so they are cached for offline use.
+          </span>
         </div>
       ) : null}
 
-      <form className="card" onSubmit={onSubmit}>
-        <div className="grid">
-          <div className="field">
-            <label htmlFor="programme">Programme *</label>
-            <select
-              id="programme"
-              required
-              value={form.programme_id}
-              onChange={(event) => set("programme_id", event.target.value)}
-            >
-              <option value="">Select…</option>
-              {programmes.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+      <form onSubmit={onSubmit}>
+        <div className="card">
+          <div className="section-title">
+            <LayersIcon size={16} />
+            Programme &amp; intake
           </div>
 
-          <div className="field">
-            <label htmlFor="year">Intake year *</label>
-            <select
-              id="year"
-              required
-              value={form.entry_academic_year_id}
-              onChange={(event) => set("entry_academic_year_id", event.target.value)}
-            >
-              <option value="">Select…</option>
-              {years.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="programme">Programme *</label>
+              <select
+                id="programme"
+                required
+                value={form.programme_id}
+                onChange={(event) => set("programme_id", event.target.value)}
+              >
+                <option value="">Select…</option>
+                {programmes.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="grid">
-          <div className="field">
-            <label htmlFor="first_name">First name *</label>
-            <input
-              id="first_name"
-              required
-              value={form.first_name}
-              onChange={(event) => set("first_name", event.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="middle_name">Middle name</label>
-            <input
-              id="middle_name"
-              value={form.middle_name}
-              onChange={(event) => set("middle_name", event.target.value)}
-            />
-            <div className="hint">Kept separate so certificates print correctly.</div>
-          </div>
-
-          <div className="field">
-            <label htmlFor="last_name">Last name *</label>
-            <input
-              id="last_name"
-              required
-              value={form.last_name}
-              onChange={(event) => set("last_name", event.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="grid">
-          <div className="field">
-            <label htmlFor="gender">Gender *</label>
-            <select
-              id="gender"
-              required
-              value={form.gender}
-              onChange={(event) => set("gender", event.target.value)}
-            >
-              <option value="female">Female</option>
-              <option value="male">Male</option>
-              <option value="other">Other</option>
-              <option value="undisclosed">Prefer not to say</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="dob">Date of birth</label>
-            <input
-              id="dob"
-              type="date"
-              value={form.date_of_birth}
-              onChange={(event) => set("date_of_birth", event.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="nid">National ID number</label>
-            <input
-              id="nid"
-              value={form.national_id_number}
-              onChange={(event) => set("national_id_number", event.target.value)}
-            />
-            <div className="hint">
-              Used to catch the same person being entered twice from two devices.
+            <div className="field">
+              <label htmlFor="year">Intake year *</label>
+              <select
+                id="year"
+                required
+                value={form.entry_academic_year_id}
+                onChange={(event) => set("entry_academic_year_id", event.target.value)}
+              >
+                <option value="">Select…</option>
+                {years.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        <div className="grid">
-          <div className="field">
-            <label htmlFor="state">State of origin</label>
-            <select
-              id="state"
-              value={form.state_of_origin}
-              onChange={(event) => set("state_of_origin", event.target.value)}
-            >
-              <option value="">Select…</option>
-              {STATES.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <div className="hint">Required for statutory returns to MoHEST.</div>
+        <div className="card">
+          <div className="section-title">
+            <UserIcon size={16} />
+            Personal details
           </div>
 
-          <div className="field">
-            <label htmlFor="county">County</label>
-            <input
-              id="county"
-              value={form.county}
-              onChange={(event) => set("county", event.target.value)}
-            />
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="first_name">First name *</label>
+              <input
+                id="first_name"
+                required
+                value={form.first_name}
+                onChange={(event) => set("first_name", event.target.value)}
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="middle_name">Middle name</label>
+              <input
+                id="middle_name"
+                value={form.middle_name}
+                onChange={(event) => set("middle_name", event.target.value)}
+              />
+              <div className="hint">Kept separate so certificates print correctly.</div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="last_name">Last name *</label>
+              <input
+                id="last_name"
+                required
+                value={form.last_name}
+                onChange={(event) => set("last_name", event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="gender">Gender *</label>
+              <select
+                id="gender"
+                required
+                value={form.gender}
+                onChange={(event) => set("gender", event.target.value)}
+              >
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+                <option value="undisclosed">Prefer not to say</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="dob">Date of birth</label>
+              <input
+                id="dob"
+                type="date"
+                value={form.date_of_birth}
+                onChange={(event) => set("date_of_birth", event.target.value)}
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="nid">National ID number</label>
+              <input
+                id="nid"
+                value={form.national_id_number}
+                onChange={(event) => set("national_id_number", event.target.value)}
+              />
+              <div className="hint">
+                Used to catch the same person being entered twice from two devices.
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid">
-          <div className="field">
-            <label htmlFor="phone">Phone</label>
-            <input
-              id="phone"
-              type="tel"
-              inputMode="tel"
-              placeholder="+211…"
-              value={form.phone}
-              onChange={(event) => set("phone", event.target.value)}
-            />
-            <div className="hint">The channel used for critical notices by SMS.</div>
+        <div className="card">
+          <div className="section-title">
+            <MapPinIcon size={16} />
+            Origin &amp; special needs
           </div>
 
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              inputMode="email"
-              value={form.email}
-              onChange={(event) => set("email", event.target.value)}
-            />
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="state">State of origin</label>
+              <select
+                id="state"
+                value={form.state_of_origin}
+                onChange={(event) => set("state_of_origin", event.target.value)}
+              >
+                <option value="">Select…</option>
+                {STATES.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <div className="hint">Required for statutory returns to MoHEST.</div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="county">County</label>
+              <input
+                id="county"
+                value={form.county}
+                onChange={(event) => set("county", event.target.value)}
+              />
+            </div>
           </div>
         </div>
 
-        <button type="submit" disabled={busy}>
-          {busy ? "Saving…" : "Admit student"}
-        </button>
+        <div className="card">
+          <div className="section-title">
+            <PhoneIcon size={16} />
+            Contact
+          </div>
+
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="phone">Phone</label>
+              <input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="+211…"
+                value={form.phone}
+                onChange={(event) => set("phone", event.target.value)}
+              />
+              <div className="hint">The channel used for critical notices by SMS.</div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                inputMode="email"
+                value={form.email}
+                onChange={(event) => set("email", event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="primary" disabled={busy}>
+              {busy ? <span className="spinner" aria-hidden="true" /> : null}
+              {busy ? "Saving…" : "Admit student"}
+            </button>
+          </div>
+        </div>
       </form>
     </>
   );

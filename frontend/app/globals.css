@@ -20,12 +20,16 @@
   --outline-variant: #c4c6cf;
 
   --primary: #002045;
+  --primary-strong: #001330;
   --on-primary: #ffffff;
   --primary-container: #1a365d;
   --on-primary-container: #86a0cd;
 
   --secondary: #4b41e1;
+  --secondary-strong: #372fb0;
   --on-secondary: #ffffff;
+  --secondary-container: #e2dfff;
+  --on-secondary-container: #241a8f;
 
   --tertiary: #00252d;
   --tertiary-container: #003c47;
@@ -40,21 +44,66 @@
   --warning-container: #ffddb3;
   --success: #14652f;
   --success-container: #b8f2c4;
+  --info: var(--secondary);
+  --info-container: var(--secondary-container);
 
+  /* Dedicated categorical set for stat-tile identity (dashboard cards). Kept
+     separate from warning/success: those carry actual state meaning ("this is
+     wrong", "this succeeded") and must never double as decoration. Validated with
+     dataviz/scripts/validate_palette.js — CVD separation clears with the
+     redundant icon-shape + label encoding every stat tile already carries. */
+  --stat-blue: #0b3d8f;
+  --stat-blue-container: #dbe7fb;
+  --stat-teal: #075c46;
+  --stat-teal-container: #cdf0e3;
+  --stat-amber: #8a4b00;
+  --stat-amber-container: #ffe3b8;
+
+  --radius-lg: 16px;
   --radius: 12px;
   --radius-sm: 8px;
-  --gap: 16px;
+  --radius-xs: 6px;
+
+  /* 4px base scale — every margin/padding in this file is one of these. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --gap: var(--sp-4);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 12, 32, 0.06), 0 1px 1px 0 rgba(0, 12, 32, 0.04);
+  --shadow-md: 0 4px 10px -2px rgba(0, 12, 32, 0.1), 0 2px 4px -2px rgba(0, 12, 32, 0.06);
+  --shadow-lg: 0 12px 24px -6px rgba(0, 12, 32, 0.16), 0 4px 8px -4px rgba(0, 12, 32, 0.08);
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --fast: 120ms;
+  --normal: 200ms;
 
   --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --topbar-h: 60px;
+  --nav-w: 248px;
+
+  /* Fixed brand fill — deliberately NOT redefined under dark mode below. --primary
+     flips to a light tone in dark mode (correct for text/icons sitting on a dark
+     surface), which is wrong for a large brand panel: it would invert the login
+     hero into a pale block instead of staying the university's navy in both
+     themes. Only the topbar and buttons should track --primary's theme swap. */
+  --brand-hero-start: #002045;
+  --brand-hero-end: #001330;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --surface: #111621;
     --surface-dim: #0b0f17;
-    --surface-container-lowest: #0b0f17;
+    --surface-container-lowest: #161c28;
     --surface-container-low: #161c28;
     --surface-container: #1b2230;
     --surface-container-high: #212938;
@@ -62,29 +111,48 @@
     --on-surface: #ecf1ff;
     --on-surface-variant: #c4c6cf;
     --outline: #8c9199;
-    --outline-variant: #3a4150;
+    --outline-variant: #313a4a;
 
     --primary: #adc7f7;
+    --primary-strong: #cddcff;
     --on-primary: #001b3c;
     --primary-container: #2d476f;
     --on-primary-container: #d6e3ff;
 
     --secondary: #c3c0ff;
+    --secondary-strong: #dcd9ff;
     --on-secondary: #0f0069;
+    --secondary-container: #372fb0;
+    --on-secondary-container: #e5e1ff;
 
     --error: #ffb4ab;
     --on-error: #690005;
-    --error-container: #93000a;
+    --error-container: #5c1a16;
     --on-error-container: #ffdad6;
 
-    --warning: #ffddb3;
+    --warning: #ffce8a;
     --warning-container: #5c3f00;
-    --success: #b8f2c4;
-    --success-container: #14652f;
+    --success: #8fdba0;
+    --success-container: #0f4a24;
+    --info: var(--secondary);
+    --info-container: var(--secondary-container);
+
+    --stat-blue: #9dc4ff;
+    --stat-blue-container: #163a66;
+    --stat-teal: #5cd9ae;
+    --stat-teal-container: #0c3d2e;
+    --stat-amber: #ffcf7a;
+    --stat-amber-container: #4a3300;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
   }
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -99,10 +167,39 @@ body {
   background: var(--surface);
   color: var(--on-surface);
   -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
 }
 
 a {
   color: var(--secondary);
+}
+
+svg {
+  display: block;
+}
+
+::selection {
+  background: var(--secondary-container);
+}
+
+/* Respect the OS setting rather than fighting it with fixed-duration transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -116,24 +213,65 @@ a {
 .topbar {
   display: flex;
   align-items: center;
-  gap: var(--gap);
-  padding: 12px 16px;
-  background: var(--primary);
-  color: var(--on-primary);
+  gap: var(--sp-3);
+  height: var(--topbar-h);
+  padding: 0 var(--sp-5);
+  /* Fixed navy, not var(--primary): that token flips to a light tone in dark
+     mode (correct for text sitting on a dark surface), which would invert the
+     topbar into a pale bar instead of staying the brand colour in both themes —
+     the same fix as .login__hero, so the brand identity is consistent between
+     the login screen and the signed-in shell. */
+  background: var(--brand-hero-start);
+  color: #ffffff;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 30;
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar__menu-btn {
+  display: none;
+  color: inherit;
+  background: transparent;
+  padding: var(--sp-2);
+  border-radius: var(--radius-sm);
+}
+
+.topbar__menu-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-weight: 700;
+  font-size: 1.0625rem;
   letter-spacing: -0.01em;
-  margin-right: auto;
+  color: inherit;
+  text-decoration: none;
 }
 
-.topbar__user {
-  font-size: 0.875rem;
-  opacity: 0.85;
+.topbar__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.topbar__spacer {
+  flex: 1;
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
 }
 
 .shell {
@@ -143,65 +281,175 @@ a {
 }
 
 .nav {
-  width: 220px;
+  width: var(--nav-w);
   flex-shrink: 0;
-  padding: 16px 12px;
+  padding: var(--sp-4) var(--sp-3);
   background: var(--surface-container-low);
   border-right: 1px solid var(--outline-variant);
-}
-
-.nav a {
-  display: block;
-  padding: 10px 12px;
-  margin-bottom: 4px;
-  border-radius: var(--radius-sm);
-  color: var(--on-surface);
-  text-decoration: none;
-  font-size: 0.9375rem;
-}
-
-.nav a:hover,
-.nav a[aria-current="page"] {
-  background: var(--surface-container-high);
-  font-weight: 600;
+  overflow-y: auto;
 }
 
 .nav__section {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--on-surface-variant);
-  margin: 16px 0 8px 12px;
+  margin: var(--sp-5) var(--sp-1) var(--sp-2) var(--sp-3);
+}
+
+.nav__section:first-child {
+  margin-top: var(--sp-1);
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.nav__link svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.nav__link:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.nav__link[aria-current="page"] {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-weight: 700;
+  border-left-color: var(--secondary);
+}
+
+.nav__link[aria-current="page"] svg {
+  opacity: 1;
+}
+
+.nav__badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--on-secondary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-backdrop {
+  display: none;
 }
 
 .content {
   flex: 1;
   min-width: 0;
-  padding: 24px;
+  padding: var(--sp-6);
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
 }
 
-@media (max-width: 720px) {
-  .shell {
-    flex-direction: column;
-  }
-  .nav {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--outline-variant);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 8px;
-  }
-  .nav a {
-    margin: 0;
-  }
-  .nav__section {
+@media (max-width: 560px) {
+  .menu__name {
     display: none;
   }
-  .content {
-    padding: 16px;
+}
+
+@media (max-width: 420px) {
+  .hide-xs,
+  .conn__label {
+    display: none;
   }
+}
+
+@media (max-width: 860px) {
+  .topbar__menu-btn {
+    display: inline-flex;
+  }
+
+  .nav {
+    position: fixed;
+    top: var(--topbar-h);
+    bottom: 0;
+    left: 0;
+    z-index: 25;
+    width: min(var(--nav-w), 82vw);
+    transform: translateX(-100%);
+    transition: transform var(--normal) var(--ease);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .nav.is-open {
+    transform: translateX(0);
+  }
+
+  .nav-backdrop.is-open {
+    display: block;
+    position: fixed;
+    inset: var(--topbar-h) 0 0 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 24;
+  }
+
+  .content {
+    padding: var(--sp-4);
+  }
+}
+
+/* -------------------------------------------------------------- typography */
+
+h1 {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--sp-1);
+}
+
+h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.page-subtitle {
+  color: var(--on-surface-variant);
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.muted {
+  color: var(--on-surface-variant);
+}
+
+.text-sm {
+  font-size: 0.875rem;
 }
 
 /* -------------------------------------------------------------- components */
@@ -209,31 +457,44 @@ a {
 .card {
   background: var(--surface-container-lowest);
   border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  padding: 20px;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
   margin-bottom: var(--gap);
+  box-shadow: var(--shadow-sm);
 }
 
-.card h2 {
-  margin: 0 0 4px;
-  font-size: 1.125rem;
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-1);
+}
+
+.card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  flex-shrink: 0;
 }
 
 .card p.muted {
-  margin: 0 0 16px;
-  color: var(--on-surface-variant);
+  margin: var(--sp-1) 0 var(--sp-4);
   font-size: 0.9375rem;
 }
 
-h1 {
-  font-size: 1.75rem;
-  letter-spacing: -0.02em;
-  margin: 0 0 4px;
+.card p.muted:last-child {
+  margin-bottom: 0;
 }
 
-.page-subtitle {
-  color: var(--on-surface-variant);
-  margin: 0 0 24px;
+.divider {
+  border: none;
+  border-top: 1px solid var(--outline-variant);
+  margin: var(--sp-4) 0;
 }
 
 .grid {
@@ -242,52 +503,182 @@ h1 {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+  margin: 0 0 var(--sp-4);
+}
+
+.section-title svg {
+  color: var(--secondary);
+}
+
+.section-title + .divider {
+  display: none;
+}
+
+/* ----------------------------------------------------------------- forms */
+
 .field {
-  margin-bottom: 14px;
+  margin-bottom: var(--sp-4);
 }
 
 .field label {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: var(--sp-2);
 }
 
+.input,
 .field input,
 .field select,
 .field textarea {
   width: 100%;
-  padding: 11px 12px;
+  padding: 10px 12px;
+  font: inherit;
   font-size: 1rem;
-  font-family: inherit;
   color: var(--on-surface);
   background: var(--surface-container-lowest);
-  border: 1px solid var(--outline);
+  border: 1px solid var(--outline-variant);
   border-radius: var(--radius-sm);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2343474e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 34px;
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: var(--outline);
 }
 
 .field input:focus,
-.field select:focus {
-  outline: 2px solid var(--secondary);
-  outline-offset: 1px;
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px var(--secondary-container);
+}
+
+.field input:disabled,
+.field select:disabled {
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  cursor: not-allowed;
 }
 
 .field .hint {
   font-size: 0.8125rem;
   color: var(--on-surface-variant);
-  margin-top: 4px;
+  margin-top: var(--sp-1);
 }
+
+.field--icon {
+  position: relative;
+}
+
+.field--icon svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--on-surface-variant);
+  pointer-events: none;
+}
+
+.field--icon input {
+  padding-left: 38px;
+}
+
+.field--icon .field__clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--on-surface-variant);
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px;
+  pointer-events: auto;
+}
+
+.field--icon .field__clear:hover {
+  background: var(--surface-container-high);
+}
+
+.field--password input {
+  padding-right: 42px;
+}
+
+.field-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  color: var(--on-surface-variant);
+  padding: 6px;
+  border-radius: 999px;
+}
+
+.field-toggle:hover {
+  background: var(--surface-container-high);
+}
+
+.field-row {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+
+/* ---------------------------------------------------------------- buttons */
 
 button,
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
   font: inherit;
   font-weight: 600;
-  padding: 11px 18px;
+  font-size: 0.9375rem;
+  padding: 10px 18px;
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--secondary);
+  color: var(--on-secondary);
   cursor: pointer;
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  background: var(--secondary-strong);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 button:disabled {
@@ -295,16 +686,85 @@ button:disabled {
   cursor: not-allowed;
 }
 
+button.primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--primary-strong);
+}
+
 button.secondary {
   background: var(--surface-container-high);
   color: var(--on-surface);
 }
 
+button.secondary:hover:not(:disabled) {
+  background: var(--surface-container-highest);
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--on-surface-variant);
+  padding: 8px 12px;
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+button.danger {
+  background: var(--error);
+  color: var(--on-error);
+}
+
+button.danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+button.icon-btn {
+  padding: 8px;
+  border-radius: 999px;
+}
+
+button.block {
+  width: 100%;
+}
+
+button.sm {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+}
+
+/* Inline spinner shown in a button's loading state — see components/icons. */
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------------ alerts */
+
 .alert {
-  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--radius-sm);
   font-size: 0.9375rem;
+  line-height: 1.45;
   margin-bottom: var(--gap);
+}
+
+.alert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .alert--error {
@@ -322,16 +782,80 @@ button.secondary {
   color: var(--success);
 }
 
+.alert--info {
+  background: var(--info-container);
+  color: var(--on-secondary-container);
+}
+
+/* -------------------------------------------------------------- stat tile */
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.stat__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.stat__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+}
+
+.stat__value {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.stat__foot {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  margin-top: var(--sp-1);
+}
+
+.stat--accent-blue .stat__icon {
+  background: var(--stat-blue-container);
+  color: var(--stat-blue);
+}
+
+.stat--accent-teal .stat__icon {
+  background: var(--stat-teal-container);
+  color: var(--stat-teal);
+}
+
+.stat--accent-amber .stat__icon {
+  background: var(--stat-amber-container);
+  color: var(--stat-amber);
+}
+
 /* --------------------------------------------------- connection + outbox */
 
 .conn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-2);
   font-size: 0.8125rem;
-  padding: 4px 10px;
+  font-weight: 600;
+  padding: 6px 10px 6px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
+  color: inherit;
 }
 
 .conn__dot {
@@ -339,15 +863,41 @@ button.secondary {
   height: 8px;
   border-radius: 50%;
   background: #6ee7a0;
+  box-shadow: 0 0 0 3px rgba(110, 231, 160, 0.25);
 }
 
 .conn--offline .conn__dot {
   background: #ffb4ab;
+  box-shadow: 0 0 0 3px rgba(255, 180, 171, 0.25);
+}
+
+.conn__queue-btn {
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  padding: 4px 10px 4px 8px;
+  font-size: 0.8125rem;
+  border-radius: 999px;
+}
+
+.conn__queue-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.26);
 }
 
 .queue {
   font-family: var(--mono);
   font-size: 0.8125rem;
+}
+
+/* ------------------------------------------------------------------ table */
+
+.table-scroll {
+  overflow-x: auto;
+  /* Cancel only the card's side padding, so the table can use the full card width
+     on narrow screens without limiting how far horizontal scroll can go. Top and
+     bottom padding stay, which also avoids the table's square corners overhanging
+     the card's rounded ones. */
+  margin: 0 calc(var(--sp-5) * -1);
+  padding: 0 var(--sp-5);
 }
 
 table {
@@ -359,28 +909,85 @@ table {
 th,
 td {
   text-align: left;
-  padding: 10px 8px;
+  padding: var(--sp-3) var(--sp-2);
   border-bottom: 1px solid var(--outline-variant);
+  vertical-align: middle;
 }
 
 th {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--on-surface-variant);
+  white-space: nowrap;
 }
 
-.table-scroll {
-  overflow-x: auto;
+tbody tr {
+  transition: background var(--fast) var(--ease);
 }
+
+tbody tr:hover {
+  background: var(--surface-container-low);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cell-primary {
+  font-weight: 600;
+}
+
+.row-flex {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* Initials badge for a name in a table row. */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.avatar--sm {
+  width: 26px;
+  height: 26px;
+  font-size: 0.6875rem;
+}
+
+/* ------------------------------------------------------------------- pill */
 
 .pill {
-  display: inline-block;
-  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
+.pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }
 
 .pill--pending {
@@ -398,32 +1005,342 @@ th {
   color: var(--on-error-container);
 }
 
+.pill--info {
+  background: var(--info-container);
+  color: var(--on-secondary-container);
+}
+
+/* -------------------------------------------------------------- feedback */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--sp-2);
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--on-surface-variant);
+}
+
+.empty-state__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  margin-bottom: var(--sp-2);
+}
+
+.empty-state__title {
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-container-high);
+  border-radius: var(--radius-sm);
+  isolation: isolate;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+  .skeleton::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent
+    );
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-row {
+  height: 18px;
+  margin: 4px 0;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ------------------------------------------------------------ user menu */
+
+.menu {
+  position: relative;
+}
+
+.menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: transparent;
+  color: inherit;
+  padding: 6px 8px 6px 6px;
+  border-radius: 999px;
+}
+
+.menu__trigger:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.menu__name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.menu__name strong {
+  font-size: 0.8125rem;
+}
+
+.menu__name span {
+  font-size: 0.6875rem;
+  opacity: 0.8;
+  text-transform: capitalize;
+}
+
+.menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 200px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: var(--sp-2);
+  z-index: 40;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface);
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.menu__item:hover {
+  background: var(--surface-container-high);
+}
+
+/* A dedicated class rather than reusing .danger: that name already belongs to
+   the generic `button.danger` variant (solid red fill), and combining bare
+   ".danger" with ".menu__item" here previously lost the background-transparent
+   rule to it on specificity — text and background both resolved to the same
+   red, rendering as a solid block with invisible content. */
+.menu__item--danger {
+  color: var(--error);
+}
+
 /* ----------------------------------------------------------------- login */
 
 .login {
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: 24px;
-  background: linear-gradient(160deg, var(--surface-container) 0%, var(--surface) 60%);
+  grid-template-columns: 1.1fr 1fr;
+}
+
+.login__hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--sp-10);
+  background: radial-gradient(
+      circle at 15% 20%,
+      rgba(255, 255, 255, 0.08),
+      transparent 45%
+    ),
+    linear-gradient(160deg, var(--brand-hero-start) 0%, var(--brand-hero-end) 100%);
+  /* Fixed white, matching the fixed brand fill above — not var(--on-primary),
+     which would flip to navy text on this same navy panel in dark mode. */
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.login__hero-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-weight: 700;
+  font-size: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.login__hero-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.login__hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+}
+
+.login__hero-copy h1 {
+  color: #ffffff;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.login__hero-copy p {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.login__hero-features {
+  list-style: none;
+  padding: 0;
+  margin: var(--sp-6) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.login__hero-features li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9375rem;
+}
+
+.login__hero-features svg {
+  flex-shrink: 0;
+  color: #8fe3b0;
+}
+
+.login__hero-foot {
+  position: relative;
+  z-index: 1;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.login__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  background: var(--surface);
 }
 
 .login__card {
   width: 100%;
   max-width: 380px;
-  background: var(--surface-container-lowest);
-  border-radius: var(--radius);
-  padding: 28px;
+}
+
+.login__mobile-brand {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: var(--sp-6);
+  color: var(--primary);
 }
 
 .login__title {
-  margin: 0 0 4px;
+  margin: 0 0 var(--sp-1);
   font-size: 1.5rem;
   letter-spacing: -0.02em;
 }
 
 .login__sub {
-  margin: 0 0 24px;
+  margin: 0 0 var(--sp-6);
   color: var(--on-surface-variant);
   font-size: 0.9375rem;
+}
+
+@media (max-width: 860px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+  .login__hero {
+    display: none;
+  }
+  .login__mobile-brand {
+    display: flex;
+  }
+  .login__panel {
+    padding: var(--sp-4);
+  }
+}
+
+/* A single-card centred screen — the redirect splash and the offline fallback,
+   neither of which has (or needs) the login page's two-panel hero layout. */
+.splash {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-6);
+  background: var(--surface);
+  text-align: center;
+}
+
+.splash__card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.splash__brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  margin-bottom: var(--sp-4);
 }

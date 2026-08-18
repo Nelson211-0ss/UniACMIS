@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 
+import { InboxIcon, RefreshIcon, SendIcon, TrashIcon } from "@/components/icons";
 import * as outbox from "@/lib/outbox";
 import { flush } from "@/lib/sync";
 
@@ -55,6 +56,7 @@ export default function OutboxPage() {
   const unsent = operations.filter(
     (op) => op.status === "pending" || op.status === "failed",
   ).length;
+  const savedCount = operations.filter((op) => op.status === "synced").length;
 
   return (
     <>
@@ -66,13 +68,24 @@ export default function OutboxPage() {
       <div className="card">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={sendNow} disabled={busy || unsent === 0}>
+            {busy ? (
+              <RefreshIcon size={16} className="spin" />
+            ) : (
+              <SendIcon size={16} />
+            )}
             {busy ? "Sending…" : `Send ${unsent} queued`}
           </button>
-          <button type="button" className="secondary" onClick={clearSaved}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={clearSaved}
+            disabled={savedCount === 0}
+          >
+            <TrashIcon size={16} />
             Clear saved entries
           </button>
         </div>
-        <p className="muted" style={{ marginTop: 12, marginBottom: 0 }}>
+        <p className="muted text-sm" style={{ marginTop: 12, marginBottom: 0 }}>
           Entries send automatically when a connection is available. Nothing is
           removed until the server confirms it, so closing the browser is safe.
         </p>
@@ -80,9 +93,16 @@ export default function OutboxPage() {
 
       <div className="card">
         {operations.length === 0 ? (
-          <p className="muted" style={{ marginBottom: 0 }}>
-            Nothing queued on this device.
-          </p>
+          <div className="empty-state">
+            <span className="empty-state__icon">
+              <InboxIcon size={26} />
+            </span>
+            <span className="empty-state__title">Nothing queued on this device</span>
+            <span className="text-sm">
+              Entries made while offline will appear here until the server confirms
+              them.
+            </span>
+          </div>
         ) : (
           <div className="table-scroll">
             <table>
@@ -99,13 +119,8 @@ export default function OutboxPage() {
                 {operations.map((op) => (
                   <tr key={op.clientOpId}>
                     <td>
-                      {op.label || "(unnamed)"}
-                      <div
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--on-surface-variant)",
-                        }}
-                      >
+                      <span className="cell-primary">{op.label || "(unnamed)"}</span>
+                      <div className="text-sm muted">
                         {new Date(op.createdAt).toLocaleString()}
                       </div>
                     </td>
@@ -117,7 +132,7 @@ export default function OutboxPage() {
                         {STATUS_LABEL[op.status]}
                       </span>
                     </td>
-                    <td style={{ fontSize: "0.875rem" }}>
+                    <td className="text-sm">
                       {op.status === "synced" && op.result?.student_id ? (
                         <span style={{ fontFamily: "var(--mono)" }}>
                           {String(op.result.student_id)}

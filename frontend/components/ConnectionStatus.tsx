@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { RefreshIcon, WifiIcon, WifiOffIcon } from "@/components/icons";
 import * as outbox from "@/lib/outbox";
 import { flush, startAutoSync } from "@/lib/sync";
 
@@ -52,23 +53,28 @@ export function ConnectionStatus() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span className={`conn ${online ? "" : "conn--offline"}`}>
+        {online ? <WifiIcon size={14} /> : <WifiOffIcon size={14} />}
         <span className="conn__dot" />
-        {online ? "Online" : "Offline"}
+        <span className="conn__label">{online ? "Online" : "Offline"}</span>
       </span>
 
       {count > 0 ? (
         <button
           type="button"
-          className="secondary"
+          className="conn__queue-btn"
           onClick={syncNow}
           disabled={busy || !online}
-          style={{ padding: "4px 10px", fontSize: "0.8125rem" }}
           title={
             online
               ? "Send queued entries now"
               : "Queued entries will send automatically when the connection returns"
           }
         >
+          {busy ? (
+            <RefreshIcon size={14} className="spin" />
+          ) : (
+            <RefreshIcon size={14} />
+          )}
           {busy ? "Sending…" : `${count} queued`}
         </button>
       ) : null}
