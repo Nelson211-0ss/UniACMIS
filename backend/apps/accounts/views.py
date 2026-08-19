@@ -22,6 +22,10 @@ from apps.accounts.serializers import (
     ChangePasswordSerializer,
     LoginSerializer,
     MeSerializer,
+    MFABackupCodesSerializer,
+    MFAConfirmSerializer,
+    MFADisableSerializer,
+    MFASetupSerializer,
     RoleAssignmentSerializer,
     RoleSerializer,
     UserAdminSerializer,
@@ -102,6 +106,50 @@ class ChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Password updated."})
+
+
+class MFASetupView(APIView):
+    """NFR-SEC-04, step 1: start enrolling an authenticator. MFA is not
+    enabled until `MFAConfirmView` proves the app was actually set up."""
+
+    permission_classes = [IsAuthenticatedAndActive]
+
+    @extend_schema(summary="Start MFA enrolment", responses={200: MFASetupSerializer})
+    def post(self, request: Request) -> Response:
+        uri = services.start_mfa_enrolment(request.user)
+        return Response(MFASetupSerializer({"provisioning_uri": uri}).data)
+
+
+class MFAConfirmView(APIView):
+    """NFR-SEC-04, step 2: the first code from the newly-added authenticator
+    enables MFA and issues one-time backup codes, shown exactly once."""
+
+    permission_classes = [IsAuthenticatedAndActive]
+
+    @extend_schema(
+        summary="Confirm MFA enrolment",
+        request=MFAConfirmSerializer,
+        responses={200: MFABackupCodesSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = MFAConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        codes = services.confirm_mfa_enrolment(request.user, code=serializer.validated_data["code"])
+        return Response(MFABackupCodesSerializer({"backup_codes": codes}).data)
+
+
+class MFADisableView(APIView):
+    """Requires the current password again — a session cookie left open on a
+    shared machine must not be enough on its own to weaken the account."""
+
+    permission_classes = [IsAuthenticatedAndActive]
+
+    @extend_schema(summary="Disable MFA", request=MFADisableSerializer, responses={200: dict})
+    def post(self, request: Request) -> Response:
+        serializer = MFADisableSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        services.disable_mfa(request.user)
+        return Response({"detail": "MFA disabled."})
 
 
 class RoleListView(APIView):

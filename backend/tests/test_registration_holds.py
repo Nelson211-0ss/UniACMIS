@@ -1,12 +1,21 @@
 """
 Registration holds (FR-ENR-03) — the cross-module integration test.
 
-The point of this file is the *absence* of the finance module. Unpaid fees blocking
-registration is a rule that spans two modules, and `finance` does not exist until
-Phase 4. It is tested now through the hold-provider port, so Phase 4 replaces the
-implementation and these tests keep passing unchanged.
+Through Phase 3, the point of this file was the *absence* of the finance
+module: unpaid fees blocking registration is a rule that spans two modules,
+and it was tested through the hold-provider port with a demo stand-in years
+before `finance` existed, so that Phase 4 could replace the implementation
+without these tests changing at all.
 
-That is the architectural claim under test, not just the rule.
+Phase 4 has now landed exactly that way — `apps.finance.providers.FeeBalanceHoldProvider`
+is registered for real (see `apps/finance/tests/test_services.py` for the
+integration test against a genuine invoice) — and the demo provider stays
+registered in this settings profile too (`ENABLE_DEMO_HOLD_PROVIDER=True` in
+`config.settings.test`), deliberately: these tests exercise the generic
+aggregation mechanism itself (several providers accumulating, one that fails
+blocking rather than being ignored, a non-blocking advisory hold, duplicate
+registration not double-counting) without needing a real invoice for every
+case, which is what makes the demo seam still worth keeping.
 """
 
 from __future__ import annotations
@@ -14,7 +23,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
-from django.apps import apps
 
 from apps.core.exceptions import BlockedByHold
 from apps.core.ports import Hold, HoldProvider
@@ -28,12 +36,6 @@ from apps.core.services.registry import registry
 from apps.registry.services import assert_can_register, registration_holds
 
 pytestmark = pytest.mark.django_db
-
-
-def test_the_finance_module_is_genuinely_absent():
-    """Guards the premise: if `finance` were installed, these tests would be
-    proving something else."""
-    assert not apps.is_installed("apps.finance")
 
 
 def test_a_student_with_no_balance_is_clear(student):

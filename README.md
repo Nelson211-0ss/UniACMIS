@@ -7,15 +7,19 @@ enrollment, timetabling, attendance, examinations, finance, HR, library, hostel,
 communications, alumni and statutory reporting — designed to keep working through the power and
 connectivity interruptions that are normal in its operating environment.
 
-> ## Status: Phase 3 (Academic Operations) — built and passing
+> ## Status: Phase 7 (Hardening, in part) — built and passing
 >
-> Nine Django apps built across three phases — Phase 1's foundation (`core`, `audit`, `accounts`,
-> `academics`, `curriculum`, `registry`), Phase 2's `admissions` and `enrollment`, and Phase 3's
-> `timetabling`, `attendance` and `examinations` — plus a thin PWA shell with a working offline outbox,
-> **450 tests green**, three module-boundary contracts enforced, and a verifiable audit chain over the
-> seeded data.
+> Fifteen Django apps built across seven phases — Phase 1's foundation (`core`, `audit`, `accounts`,
+> `academics`, `curriculum`, `registry`), Phase 2's `admissions` and `enrollment`, Phase 3's
+> `timetabling`, `attendance` and `examinations`, Phase 4's `finance`, Phase 5's `hr`, `library` and
+> `hostel`, Phase 6's `documents`, `communications`, `alumni` and `reporting`, and Phase 7's TOTP/MFA
+> enrolment, backup/restore automation and bulk student-import tooling — plus a thin PWA shell with a
+> working offline outbox, a Student Self-Service Portal, **668 tests green**, three module-boundary
+> contracts enforced, and a verifiable audit chain over the seeded data. Every permission the RBAC policy
+> declares resolves to a real, installed module — nothing left pending.
 >
-> Phase 4 (Finance) has not started. Design docs:
+> The rest of Phase 7 (load testing, uptime monitoring, disk-encryption verification, an annual pen test)
+> is operational rather than code and remains open. Design docs:
 > [ARCHITECTURE.md](docs/ARCHITECTURE.md) · [DATA_MODEL.md](docs/DATA_MODEL.md) ·
 > [PHASE1_TASKS.md](docs/PHASE1_TASKS.md) · [TRACEABILITY.md](docs/TRACEABILITY.md)
 
@@ -216,7 +220,10 @@ Production checklist (details in `docs/DEPLOYMENT.md`, added in Phase 7):
 - [ ] `DEBUG=False`, a real `SECRET_KEY`, `ALLOWED_HOSTS` set
 - [ ] HTTPS terminated at nginx; HSTS enabled
 - [ ] Application DB role has no `UPDATE`/`DELETE` grant on `audit_auditlog`
-- [ ] Nightly `pg_dump` retained locally, replicated off-site when bandwidth allows, **restore rehearsed**
+- [x] `scripts/backup_database.sh` (`make backup`) dumps, gzips, prunes past `BACKUP_RETENTION_DAYS`,
+      and copies off-site when `OFFSITE_BACKUP_DIR` is set — deployment still needs to add the nightly cron
+      entry documented in the script's header. `scripts/restore_database.sh` (`make restore FILE=...`) is
+      the rehearsed restore path — proven against a scratch database, not just written.
 - [ ] UPS/solar at the server and at registrar/finance terminals
 - [ ] `make seed-roles` run on deploy; `seed_demo` never run
 - [ ] Real `NotificationProvider` and `PaymentProvider` configured

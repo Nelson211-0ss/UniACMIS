@@ -187,6 +187,13 @@ ROLES: tuple[RoleDefinition, ...] = (
             "examinations.view_mark",
             "examinations.add_gradeappeal",
             "examinations.view_gradeappeal",
+            # Phase 4: their own invoices and payments, and requesting a
+            # refund on one — deciding it is finance's permission, never
+            # this one (FR-FIN-08's separation between asking and approving).
+            "finance.view_invoice",
+            "finance.view_payment",
+            "finance.add_refund",
+            "finance.view_refund",
         ),
     ),
     RoleDefinition(
@@ -237,6 +244,16 @@ ROLES: tuple[RoleDefinition, ...] = (
             "examinations.decide_gradeappeal",
             "timetabling.view_timetableentry",
             "timetabling.view_examtimetable",
+            # Phase 5: a HOD writes their department's appraisals and endorses
+            # leave (checked by role, not permission — see hr.views); only HR
+            # holds the final `approve_leaverequest` decision.
+            "hr.add_appraisal",
+            "hr.view_appraisal",
+            "hr.view_leaverequest",
+            # Phase 6: a HOD announces to their own department's "class" —
+            # never institution-wide, which is why `broadcast_all` is not
+            # granted here (enforced again in `communications.services`).
+            "communications.send_announcement",
         ),
     ),
     RoleDefinition(
@@ -262,6 +279,17 @@ ROLES: tuple[RoleDefinition, ...] = (
             "documents.add_transcriptrequest",
             "documents.change_transcriptrequest",
             "documents.issue_certificate",
+            "documents.revoke_document",
+            "documents.override_clearance",
+            # Phase 6
+            "communications.send_announcement",
+            "communications.broadcast_all",
+            "alumni.add_alumniprofile",
+            "alumni.change_alumniprofile",
+            "alumni.view_alumniprofile",
+            "alumni.add_alumnievent",
+            "alumni.change_alumnievent",
+            "alumni.view_alumnievent",
             # Phase 3: the registrar's office builds and publishes the class
             # timetable (FR-TT-01…03) — the exam timetable stays with the
             # examinations office, so registrar gets read access to it only.
@@ -293,8 +321,11 @@ ROLES: tuple[RoleDefinition, ...] = (
             "finance.add_payment",
             "finance.change_payment",
             "finance.view_payment",
+            "finance.add_scholarship",
             "finance.view_scholarship",
             "finance.change_scholarship",
+            "finance.view_refund",
+            "finance.add_refund",
             "finance.approve_refund",
             "finance.view_defaulterreport",
         ),
@@ -421,6 +452,11 @@ ROLES: tuple[RoleDefinition, ...] = (
             *CURRICULUM_READ,
             *ro("registry.student"),
             *ro("registry.staffprofile"),
+            # Phase 6: which KPI tiles the dashboard shows is system
+            # configuration, the same category as the sync/backup settings
+            # already granted above — `management` reads the dashboard,
+            # `ict_admin` configures what is on it.
+            *crud("reporting.dashboardwidget"),
         ),
     ),
     RoleDefinition(
@@ -439,9 +475,16 @@ ROLES: tuple[RoleDefinition, ...] = (
             "timetabling.view_examtimetable",
             "attendance.view_sessionrecord",
             "examinations.view_mark",
+            # Phase 4: read-only, the same boundary as every other read grant
+            # here — a KPI dashboard, never a write.
+            "finance.view_feestructure",
+            "finance.view_invoice",
+            "finance.view_payment",
+            "finance.view_defaulterreport",
             # Phase 6
             "reporting.view_dashboard",
             "reporting.export_statutoryreport",
+            "reporting.view_dashboardwidget",
         ),
     ),
 )

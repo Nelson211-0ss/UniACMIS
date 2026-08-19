@@ -35,6 +35,29 @@ def active_curriculum_for(programme_id: int) -> CurriculumVersion | None:
     ).first()
 
 
+def programme_id_for_code(code: str) -> int | None:
+    """`registry`'s bulk import (NFR-DATA-03) resolves a legacy spreadsheet's
+    programme code without importing `Programme` itself."""
+    return Programme.objects.filter(code=code).values_list("id", flat=True).first()
+
+
+def curriculum_version_id_for(*, programme_id: int, version: str) -> int | None:
+    """Same reason as `programme_id_for_code` — a version string scoped to
+    the programme it belongs to, not a bare global lookup."""
+    return (
+        CurriculumVersion.objects.filter(programme_id=programme_id, version=version)
+        .values_list("id", flat=True)
+        .first()
+    )
+
+
+def department_id_for_programme(programme_id: int) -> int:
+    """A programme's owning department — `communications` needs this to
+    confine a HOD's "class" announcement to their own department, without
+    importing `Programme` themselves."""
+    return Programme.objects.values_list("department_id", flat=True).get(pk=programme_id)
+
+
 def courses_for(
     curriculum_version_id: int,
     *,

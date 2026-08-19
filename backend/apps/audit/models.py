@@ -40,6 +40,8 @@ class AuditAction(models.TextChoices):
     ROLE_REVOKE = "role_revoke", _("Role revoked")
     SYNC_OVERWRITE = "sync_overwrite", _("Overwritten by offline sync")
     EXPORT = "export", _("Exported data")
+    MFA_ENABLED = "mfa_enabled", _("MFA enabled")
+    MFA_DISABLED = "mfa_disabled", _("MFA disabled")
 
 
 class AuditLogQuerySet(models.QuerySet):

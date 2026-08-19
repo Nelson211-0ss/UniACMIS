@@ -39,3 +39,13 @@ class Gender(models.TextChoices):
     MALE = "male", _("Male")
     OTHER = "other", _("Other")
     UNDISCLOSED = "undisclosed", _("Prefer not to say")
+
+
+class Residency(models.TextChoices):
+    """FR-FIN-01's fee-structure dimension. Lives here, not in `finance`,
+    because `registry` derives it from a student's nationality and `registry`
+    sits below `finance` in the layering — a lower app may never import a
+    higher one's models."""
+
+    LOCAL = "local", _("Local (South Sudanese)")
+    INTERNATIONAL = "international", _("International")

@@ -5,7 +5,7 @@ MANAGE := $(BACKEND) python manage.py
 .DEFAULT_GOAL := help
 .PHONY: help up down restart build logs ps migrate migrations migrations-check \
         seed seed-roles seed-demo test test-unit lint fmt shell psql superuser \
-        verify-audit permissions-matrix clean
+        verify-audit permissions-matrix clean backup restore
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -48,6 +48,12 @@ migrations-check: ## Fail if models drift from migrations (used by CI)
 
 psql: ## Open a psql session against the dev database
 	$(DC) exec db psql -U $${POSTGRES_USER:-uniacmis} -d $${POSTGRES_DB:-uniacmis}
+
+backup: ## Run a database backup now (NFR-DATA-01) — see scripts/backup_database.sh
+	./scripts/backup_database.sh
+
+restore: ## Restore a backup: make restore FILE=backups/uniacmis-....sql.gz
+	./scripts/restore_database.sh "$(FILE)" --yes
 
 # --------------------------------------------------------------------- seeding
 

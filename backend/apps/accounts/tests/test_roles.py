@@ -59,16 +59,32 @@ def test_seed_roles_grants_real_permissions(roles):
     assert "view_student" in codenames
 
 
-def test_permissions_for_uninstalled_modules_are_skipped_not_fatal(roles):
-    """The policy declares finance and examinations permissions before those
-    modules exist. Seeding must succeed and simply leave them pending."""
-    finance = Role.objects.get(code="finance")
+def test_permissions_for_uninstalled_modules_are_skipped_not_fatal(roles, monkeypatch):
+    """The policy is written ahead of the phase that implements it — every
+    module happens to be installed today, so this simulates the case with a
+    permission from a module that deliberately does not exist, rather than
+    depending on some future phase always leaving one real example behind."""
+    import apps.accounts.management.commands.seed_roles as seed_roles_command
+    from apps.accounts.roles import ROLES, RoleDefinition
+
+    fake_role = RoleDefinition(
+        code="management",
+        name="University Management",
+        description="test",
+        permissions=("registry.view_student", "not_a_real_app.fake_permission"),
+    )
+    patched = tuple(fake_role if r.code == "management" else r for r in ROLES)
+    monkeypatch.setattr(seed_roles_command, "ROLES", patched)
+
+    call_command("seed_roles", verbosity=0)
+
+    management = Role.objects.get(code="management")
     codenames = {
         f"{p.content_type.app_label}.{p.codename}"
-        for p in finance.group.permissions.select_related("content_type")
+        for p in management.group.permissions.select_related("content_type")
     }
-    assert "registry.view_student" in codenames  # exists today
-    assert not any(c.startswith("finance.") for c in codenames)  # pending
+    assert "registry.view_student" in codenames
+    assert not any(c.startswith("not_a_real_app.") for c in codenames)
 
 
 def test_seed_roles_applies_newly_available_permissions_on_a_later_run(roles):

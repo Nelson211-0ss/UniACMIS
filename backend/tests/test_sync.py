@@ -181,7 +181,7 @@ def test_an_unknown_entity_is_rejected_not_ignored(registrar, as_user):
             "operations": [
                 {
                     "client_op_id": str(uuid.uuid4()),
-                    "entity": "finance.payment",  # arrives in Phase 4
+                    "entity": "hostel.allocation",  # still arrives later in Phase 5
                     "action": "create",
                     "payload": {},
                 }
@@ -695,3 +695,145 @@ def test_the_same_score_queued_twice_applies_cleanly(
     }
     response = as_user(lecturer).post(BATCH_URL, {"operations": [same_value_again]}, format="json")
     assert response.data["results"][0]["status"] == SyncStatus.APPLIED
+
+
+# ------------------------------------------------------------------ finance (Phase 4)
+
+
+def test_the_payment_handler_is_registered():
+    assert get_handler("finance.payment") is not None
+
+
+def test_the_payment_handler_declares_flag_for_review():
+    assert registered_entities()["finance.payment"] == ConflictPolicy.FLAG_FOR_REVIEW
+
+
+@pytest.mark.integration
+def test_a_manual_payment_can_be_recorded_offline_and_synced(finance_officer, invoice, as_user):
+    operation = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "finance.payment",
+        "action": "create",
+        "payload": {
+            "invoice_id": invoice.pk,
+            "method": "cash",
+            "amount": "100.00",
+            "reference": "DESK-0001",
+        },
+        "device_id": "bursar-laptop-01",
+    }
+
+    response = as_user(finance_officer).post(BATCH_URL, {"operations": [operation]}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["results"][0]["status"] == SyncStatus.APPLIED
+
+    replay = as_user(finance_officer).post(BATCH_URL, {"operations": [operation]}, format="json")
+    assert replay.data["results"][0]["status"] == SyncStatus.DUPLICATE
+
+
+@pytest.mark.integration
+def test_a_divergent_manual_payment_is_flagged_not_overwritten(finance_officer, invoice, as_user):
+    from apps.finance.models import Payment
+
+    first = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "finance.payment",
+        "action": "create",
+        "payload": {
+            "invoice_id": invoice.pk,
+            "method": "cash",
+            "amount": "100.00",
+            "reference": "DESK-0002",
+        },
+    }
+    as_user(finance_officer).post(BATCH_URL, {"operations": [first]}, format="json")
+
+    diverging = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "finance.payment",
+        "action": "create",
+        "payload": {
+            "invoice_id": invoice.pk,
+            "method": "cash",
+            "amount": "150.00",
+            "reference": "DESK-0002",
+        },
+    }
+    conflict = as_user(finance_officer).post(BATCH_URL, {"operations": [diverging]}, format="json")
+
+    assert conflict.data["results"][0]["status"] == SyncStatus.CONFLICT
+    assert Payment.objects.get(reference="DESK-0002").amount == Decimal("100.00")
+    assert SyncConflict.objects.filter(entity="finance.payment").exists()
+
+
+@pytest.fixture
+def invoice(programme, academic_year, student, semester, registrar):
+    from apps.finance import services
+    from apps.finance.models import Residency
+
+    services.create_fee_structure(
+        programme_id=programme.pk,
+        academic_year_id=academic_year.pk,
+        level=1,
+        residency=Residency.LOCAL,
+        amount=Decimal("500.00"),
+    )
+    return services.generate_invoice(
+        student_id=student.pk, semester_id=semester.pk, actor=registrar
+    )
+
+
+# ------------------------------------------------------------------ library (Phase 5)
+
+
+def test_the_loan_checkout_handler_is_registered():
+    assert get_handler("library.loan") is not None
+
+
+def test_the_loan_checkout_handler_declares_last_write_wins():
+    assert registered_entities()["library.loan"] == ConflictPolicy.LAST_WRITE_WINS
+
+
+@pytest.fixture
+def library_item():
+    from apps.library import services as library_services
+    from apps.library.models import ItemType
+
+    return library_services.create_library_item(
+        title="Desk Circulation Manual", item_type=ItemType.BOOK, total_copies=2
+    )
+
+
+@pytest.mark.integration
+def test_a_checkout_can_be_recorded_offline_and_synced(librarian, library_item, student, as_user):
+    operation = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "library.loan",
+        "action": "create",
+        "payload": {"item_id": library_item.pk, "borrower_student_id": student.pk},
+        "device_id": "circulation-desk-01",
+    }
+
+    response = as_user(librarian).post(BATCH_URL, {"operations": [operation]}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["results"][0]["status"] == SyncStatus.APPLIED
+
+    replay = as_user(librarian).post(BATCH_URL, {"operations": [operation]}, format="json")
+    assert replay.data["results"][0]["status"] == SyncStatus.DUPLICATE
+
+
+@pytest.mark.integration
+def test_a_checkout_without_permission_is_rejected(lecturer, library_item, student, as_user):
+    operation = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "library.loan",
+        "action": "create",
+        "payload": {"item_id": library_item.pk, "borrower_student_id": student.pk},
+    }
+
+    response = as_user(lecturer).post(BATCH_URL, {"operations": [operation]}, format="json")
+
+    assert response.data["results"][0]["status"] == SyncStatus.REJECTED
+    assert response.data["results"][0]["error"]["code"] == "permission_denied"

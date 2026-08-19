@@ -236,6 +236,19 @@ def active_registration_ids(course_id: int, semester_id: int) -> set[int]:
     )
 
 
+def students_registered_in(semester_id: int) -> set[int]:
+    """Every student with at least one active registration in a semester —
+    the roll a batch invoicing run (FR-FIN-02) works through, one invoice per
+    student rather than one per registration."""
+    return set(
+        CourseRegistration.objects.filter(
+            semester_id=semester_id, status=RegistrationStatus.REGISTERED
+        )
+        .values_list("student_id", flat=True)
+        .distinct()
+    )
+
+
 def student_id_for_registration(registration_id: int) -> int | None:
     """Whose registration this is — so a caller can answer "is this mine?"
     (FR-ATT-02's eligibility check, and its own record's summary) without

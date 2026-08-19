@@ -12,11 +12,13 @@ from apps.accounts.models import Role, User, UserRole
 
 
 class LoginSerializer(TokenObtainPairSerializer):
-    """Adds lockout handling and audit logging to the JWT login.
+    """Adds lockout handling, MFA and audit logging to the JWT login.
 
     Campus machines are shared and passwords get written on desks, so repeated
     failures lock the account rather than allowing an unlimited guessing run.
     """
+
+    otp = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     @classmethod
     def get_token(cls, user: User):  # type: ignore[override]
@@ -45,6 +47,13 @@ class LoginSerializer(TokenObtainPairSerializer):
 
         try:
             data = super().validate(attrs)
+            if self.user.mfa_enabled and not services.verify_mfa_code(
+                self.user, attrs.get("otp", "")
+            ):
+                raise serializers.ValidationError(
+                    {"detail": "A valid multi-factor authentication code is required."},
+                    code="mfa_required",
+                )
         except Exception:
             services.record_failed_login(
                 email,
@@ -130,6 +139,28 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.must_change_password = False
         user.save(update_fields=["password", "must_change_password"])
         return user
+
+
+class MFASetupSerializer(serializers.Serializer):
+    provisioning_uri = serializers.CharField(read_only=True)
+
+
+class MFAConfirmSerializer(serializers.Serializer):
+    code = serializers.CharField(write_only=True)
+
+
+class MFABackupCodesSerializer(serializers.Serializer):
+    backup_codes = serializers.ListField(child=serializers.CharField(), read_only=True)
+
+
+class MFADisableSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value: str) -> str:
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value
 
 
 class UserRoleSerializer(serializers.ModelSerializer):

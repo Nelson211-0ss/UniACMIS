@@ -38,6 +38,13 @@ def academic_year_name(academic_year_id: int) -> str:
     return AcademicYear.objects.values_list("name", flat=True).get(pk=academic_year_id)
 
 
+def academic_year_id_for_name(name: str) -> int | None:
+    """The reverse of `academic_year_name()` — `registry`'s bulk import
+    (NFR-DATA-03) resolves a legacy spreadsheet's year name ("2026/2027")
+    without importing `AcademicYear` itself."""
+    return AcademicYear.objects.filter(name=name).values_list("id", flat=True).first()
+
+
 def current_semester() -> Semester | None:
     return Semester.objects.filter(is_current=True).select_related("academic_year").first()
 

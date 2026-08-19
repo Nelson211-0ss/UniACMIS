@@ -82,9 +82,12 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, AuditedModel):
         help_text=_("Grants access to the admin site. Unrelated to being a staff member."),
     )
 
-    # NFR-SEC-04: MFA must be available for finance and registrar roles. The flag
-    # and its enforcement hook exist now; TOTP enrolment ships with finance.
+    # NFR-SEC-04: MFA is available to any account; enrolment is opt-in, not
+    # forced on any particular role. `mfa_secret` is deliberately absent from
+    # `audit_fields` below — a live TOTP secret must never be written into the
+    # append-only, more-widely-read audit trail.
     mfa_enabled = models.BooleanField(_("MFA enabled"), default=False)
+    mfa_secret = models.CharField(_("MFA secret"), max_length=64, blank=True)
 
     must_change_password = models.BooleanField(
         _("must change password"),
@@ -152,6 +155,26 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, AuditedModel):
     @property
     def is_locked_out(self) -> bool:
         return self.locked_until is not None and self.locked_until > timezone.now()
+
+
+class MFABackupCode(models.Model):
+    """One-time recovery codes issued when MFA is enabled (NFR-SEC-04) — for
+    the case a phone with the authenticator app is lost. Hashed with the same
+    hasher a password gets, never stored or logged in the clear, and each
+    consumed exactly once."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mfa_backup_codes")
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(default=timezone.now)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("MFA backup code")
+        verbose_name_plural = _("MFA backup codes")
+
+    def __str__(self) -> str:
+        status = "used" if self.used_at else "unused"
+        return f"{self.user_id} backup code [{status}]"
 
 
 class Role(TimeStampedModel):

@@ -250,6 +250,26 @@ def senate_member(roles, user_factory) -> User:
 
 
 @pytest.fixture
+def hr_officer(roles, user_factory) -> User:
+    return user_factory(role="hr", email="hr@test.ss")
+
+
+@pytest.fixture
+def librarian(roles, user_factory) -> User:
+    return user_factory(role="library", email="librarian@test.ss")
+
+
+@pytest.fixture
+def hostel_officer(roles, user_factory) -> User:
+    return user_factory(role="hostel", email="hostel@test.ss")
+
+
+@pytest.fixture
+def management_officer(roles, user_factory) -> User:
+    return user_factory(role="management", email="management@test.ss")
+
+
+@pytest.fixture
 def ict_admin(roles, user_factory) -> User:
     return user_factory(role="ict_admin", email="ict@test.ss")
 

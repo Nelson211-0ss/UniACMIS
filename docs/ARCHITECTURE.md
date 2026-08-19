@@ -93,14 +93,14 @@ obscure which boundaries are actually enforced.
 | `timetabling` | Class and exam timetables, clash detection, room/invigilator allocation | 3 | **built** |
 | `attendance` | Session registers, offline capture, threshold alerts | 3 | **built** |
 | `examinations` | CA and final marks, moderation, GPA/CGPA, Senate approval gate | 3 | **built** |
-| `finance` | Fee structures, invoicing, payments, reconciliation, scholarships, refunds | 4 | planned |
-| `hr` | Staff contracts, qualifications, leave, appraisal, payroll export | 5 | planned |
-| `library` | Catalogue, circulation with offline sync, fines | 5 | planned |
-| `hostel` | Room inventory, allocation rules, occupancy | 5 | planned |
-| `documents` | Transcripts, certificates, QR/serial verification, graduation clearance | 6 | planned |
-| `communications` | SMS/email/portal notices, bulk messaging, templates | 6 | planned |
-| `alumni` | Post-graduation contacts, tracer studies, events | 6 | planned |
-| `reporting` | Dashboards, MoHEST statutory exports, disaggregated reporting | 6 | planned |
+| `finance` | Fee structures, invoicing, payments, reconciliation, scholarships, refunds | 4 | **built** |
+| `hr` | Staff contracts, qualifications, leave, appraisal, payroll export | 5 | **built** |
+| `library` | Catalogue, circulation with offline sync, fines | 5 | **built** |
+| `hostel` | Room inventory, allocation rules, occupancy | 5 | **built** |
+| `documents` | Transcripts, certificates, QR/serial verification, graduation clearance | 6 | **built** |
+| `communications` | SMS/email/portal notices, bulk messaging, templates | 6 | **built** |
+| `alumni` | Post-graduation contacts, tracer studies, events | 6 | **built** |
+| `reporting` | Dashboards, MoHEST statutory exports, disaggregated reporting | 6 | **built** |
 
 `academics` is an addition to the module list in the original brief. `NFR-MAINT-03` requires the academic
 calendar and grading scale to be data-driven configuration, and that configuration is read by
@@ -198,8 +198,10 @@ approval an independent authority. Asserted by
 - **Separation of duties.** No single non-`ict_admin` role holds both grade-write and fee-write
   permissions. `ict_admin` can administer accounts but is not granted grade or money write permissions;
   privilege escalation by an ICT officer is therefore visible in the audit trail as a role change.
-- **MFA.** `NFR-SEC-04` requires MFA availability for finance and registrar roles. The `User.mfa_enabled`
-  flag and enforcement hook exist from Phase 1; the TOTP enrolment flow lands with the finance module.
+- **MFA.** `NFR-SEC-04` requires MFA availability for finance and registrar roles — built in Phase 7 as
+  available to *any* account (see D-21), not gated by role: `apps.accounts.services.start_mfa_enrolment`/
+  `confirm_mfa_enrolment` (TOTP via `pyotp`, one-time backup codes hashed like a password), enforced at
+  login by `LoginSerializer`.
 - **Coverage test.** A parametrised permission-matrix test asserts the outcome for every role × endpoint
   pair. A new endpoint that forgets its permission class fails CI instead of shipping open.
 
@@ -348,8 +350,12 @@ Campus server (Linux + UPS/solar)          Central instance (cloud or HQ)
 └──────────────────────────────┘           └──────────────────────────────┘
 ```
 
-Backups (`NFR-DATA-01`): nightly `pg_dump` retained locally, replicated off-site opportunistically. The
-restore procedure is documented and rehearsed — an untested backup is not a backup.
+Backups (`NFR-DATA-01`): `scripts/backup_database.sh` (`make backup`) runs `pg_dump` inside the `db`
+container — the `backend` image deliberately carries no client tools (see D-22) — gzips it, prunes past
+`BACKUP_RETENTION_DAYS`, and copies off-site when `OFFSITE_BACKUP_DIR` points at a mounted path.
+`scripts/restore_database.sh` (`make restore FILE=...`) is the rehearsed restore procedure — proven
+against a scratch database, not just written. Registering the nightly cron entry is the one step left to
+an actual deployment.
 
 **Multi-campus is deferred by decision.** Phase 1 models a single campus. The checklist's multi-campus
 objective and `FR-COM-03`'s per-campus audience remain open; adding a `Campus` FK later will touch most
