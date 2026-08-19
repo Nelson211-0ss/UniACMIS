@@ -323,3 +323,88 @@ export function CreditCardIcon({ size = 18, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function BookOpenIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M12 6.5c-1.6-1-4-1.5-6-1.5a6 6 0 0 0-2 .3v13a6 6 0 0 1 2-.3c2 0 4.4.5 6 1.5" />
+      <path d="M12 6.5c1.6-1 4-1.5 6-1.5a6 6 0 0 1 2 .3v13a6 6 0 0 0-2-.3c-2 0-4.4.5-6 1.5" />
+      <path d="M12 6.5v13" />
+    </svg>
+  );
+}
+
+export function FileTextIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+      <path d="M9 12h6" />
+      <path d="M9 15.5h6" />
+      <path d="M9 9h3" />
+    </svg>
+  );
+}
+
+export function MegaphoneIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M3 10v4a1 1 0 0 0 1 1h2l1 5 2-.5-.8-4.5 9.8 3V6.5l-9.8 3H4a1 1 0 0 0-1 1Z" />
+      <path d="M18 8.5a4 4 0 0 1 0 7" />
+    </svg>
+  );
+}
+
+export function BarChartIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M4 21V10" />
+      <path d="M11 21V4" />
+      <path d="M18 21v-7" />
+      <path d="M3 21h18" />
+    </svg>
+  );
+}
+
+export function BriefcaseIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <rect x="3" y="7.5" width="18" height="12" rx="1.5" />
+      <path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5" />
+      <path d="M3 12.5h18" />
+      <path d="M10.5 12.5v1.5h3v-1.5" />
+    </svg>
+  );
+}
+
+export function BedIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M3 18v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8" />
+      <path d="M3 15h18" />
+      <path d="M3 18v2" />
+      <path d="M21 18v2" />
+      <path d="M6 11V6" />
+    </svg>
+  );
+}
+
+export function UserGraduateIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <circle cx="12" cy="8" r="3.2" />
+      <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6" />
+      <path d="M8.5 8.6 12 7l3.5 1.6" />
+    </svg>
+  );
+}
+
+export function DownloadIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M12 3v12" />
+      <path d="M7.5 10.5 12 15l4.5-4.5" />
+      <path d="M4 19h16" />
+    </svg>
+  );
+}

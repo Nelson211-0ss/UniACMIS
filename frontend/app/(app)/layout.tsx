@@ -8,103 +8,15 @@ import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { UserMenu } from "@/components/UserMenu";
 import {
   AlertCircleIcon,
-  CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ClockIcon,
-  DashboardIcon,
   GraduationCapIcon,
-  InboxIcon,
-  LayersIcon,
   MenuIcon,
-  UserPlusIcon,
-  UsersIcon,
   XIcon,
 } from "@/components/icons";
 import { useAuth } from "@/lib/auth";
+import { visibleNav } from "@/lib/nav";
 import * as outbox from "@/lib/outbox";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: (props: { size?: number }) => ReactNode;
-  /** Permission the API requires for the destination, or null for everyone. */
-  permission: string | null;
-  /** Shown only to one of these roles, or everyone if omitted. */
-  roles?: string[];
-  section: string;
-}
-
-const NAV: NavItem[] = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: DashboardIcon,
-    permission: null,
-    section: "Overview",
-  },
-  {
-    href: "/my",
-    label: "My portal",
-    icon: LayersIcon,
-    permission: null,
-    roles: ["student"],
-    section: "Student",
-  },
-  {
-    href: "/my/courses",
-    label: "Course registration",
-    icon: UserPlusIcon,
-    permission: "enrollment.view_courseregistration",
-    roles: ["student"],
-    section: "Student",
-  },
-  {
-    href: "/my/timetable",
-    label: "Timetable",
-    icon: CalendarIcon,
-    permission: "timetabling.view_timetableentry",
-    roles: ["student"],
-    section: "Student",
-  },
-  {
-    href: "/my/results",
-    label: "Results & appeals",
-    icon: LayersIcon,
-    permission: "examinations.view_mark",
-    roles: ["student"],
-    section: "Student",
-  },
-  {
-    href: "/my/attendance",
-    label: "Attendance",
-    icon: ClockIcon,
-    permission: "attendance.view_sessionrecord",
-    roles: ["student"],
-    section: "Student",
-  },
-  {
-    href: "/students",
-    label: "Students",
-    icon: UsersIcon,
-    permission: "registry.view_student",
-    section: "Registry",
-  },
-  {
-    href: "/students/new",
-    label: "Admit a student",
-    icon: UserPlusIcon,
-    permission: "registry.add_student",
-    section: "Registry",
-  },
-  {
-    href: "/outbox",
-    label: "Offline queue",
-    icon: InboxIcon,
-    permission: null,
-    section: "Device",
-  },
-];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -143,10 +55,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   // Navigation is filtered by permission for usability. The API is the actual
   // boundary — a hidden link is not a security control.
-  const visible = NAV.filter(
-    (item) =>
-      (!item.permission || can(item.permission)) && (!item.roles || hasRole(...item.roles)),
-  );
+  const visible = visibleNav(can, hasRole);
   const sections = [...new Set(visible.map((item) => item.section))];
 
   return (

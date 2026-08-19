@@ -1,19 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
+import { BarChartCard } from "@/components/charts/BarChartCard";
+import { DonutChartCard } from "@/components/charts/DonutChartCard";
 import { Stamp } from "@/components/Stamp";
 import { StatTile, StatTileSkeleton } from "@/components/StatTile";
 import {
   CalendarIcon,
   CheckCircleIcon,
   InboxIcon,
-  LayersIcon,
   UsersIcon,
   WifiOffIcon,
 } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { CHART_STATUS } from "@/lib/chartColors";
+import { visibleNav } from "@/lib/nav";
 import * as outbox from "@/lib/outbox";
 
 interface CalendarState {
@@ -21,6 +25,17 @@ interface CalendarState {
   registration_open: boolean;
   academic_year: { name: string } | null;
   semester: { name: string } | null;
+}
+
+interface RevenueData {
+  net_billed: string;
+  collected: string;
+  outstanding: string;
+}
+
+interface EnrollmentData {
+  total: number;
+  by_programme: Record<string, number>;
 }
 
 function initials(name: string): string {
@@ -31,7 +46,7 @@ function initials(name: string): string {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, can, hasRole } = useAuth();
   const [calendar, setCalendar] = useState<CalendarState | null>(null);
   const [calendarLoaded, setCalendarLoaded] = useState(false);
   const [studentCount, setStudentCount] = useState<number | null>(null);
@@ -39,7 +54,12 @@ export default function DashboardPage() {
   const [queued, setQueued] = useState(0);
   const [offline, setOffline] = useState(false);
 
+  const [revenue, setRevenue] = useState<RevenueData | null>(null);
+  const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
+  const [programmeNames, setProgrammeNames] = useState<Map<number, string>>(new Map());
+
   const canSeeStudents = user?.permissions.includes("registry.view_student") ?? false;
+  const canSeeAnalytics = can("reporting.view_dashboard");
 
   useEffect(() => {
     void outbox.countPending().then(setQueued);
@@ -61,10 +81,32 @@ export default function DashboardPage() {
         .finally(() => setStudentsLoaded(true));
     }
 
+    if (canSeeAnalytics) {
+      Promise.all([api.reportingDashboard(), api.programmes()])
+        .then(([widgets, programmePage]) => {
+          setProgrammeNames(new Map(programmePage.results.map((p) => [p.id, p.code])));
+          const revenueWidget = widgets.find((w) => w.key === "revenue");
+          const enrollmentWidget = widgets.find((w) => w.key === "enrollment");
+          if (revenueWidget) setRevenue(revenueWidget.data as unknown as RevenueData);
+          if (enrollmentWidget) setEnrollment(enrollmentWidget.data as unknown as EnrollmentData);
+        })
+        .catch(() => undefined);
+    }
+
     return unsubscribe;
-  }, [canSeeStudents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSeeStudents, canSeeAnalytics]);
 
   const firstName = user?.full_name.split(" ")[0] ?? "";
+  const links = visibleNav(can, hasRole).filter((item) => item.href !== "/dashboard" && item.href !== "/outbox");
+  const sections = [...new Set(links.map((item) => item.section))];
+
+  const enrollmentByProgramme = enrollment
+    ? Object.entries(enrollment.by_programme).map(([id, count]) => ({
+        programme: programmeNames.get(Number(id)) ?? `#${id}`,
+        students: count,
+      }))
+    : [];
 
   return (
     <>
@@ -135,6 +177,16 @@ export default function DashboardPage() {
           )
         ) : null}
 
+        {revenue ? (
+          <StatTile
+            label="Outstanding revenue"
+            value={Number(revenue.outstanding).toLocaleString()}
+            icon={<CalendarIcon size={18} />}
+            accent="rose"
+            foot={`Net billed ${Number(revenue.net_billed).toLocaleString()}`}
+          />
+        ) : null}
+
         <StatTile
           label="Offline queue on this device"
           value={queued}
@@ -166,18 +218,77 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
+      {canSeeAnalytics && (enrollment || revenue) ? (
+        <>
+          <div className="dashboard-section">
+            <h2>Analytics</h2>
+            <Link href="/reporting" className="dashboard-section__link">
+              Full report →
+            </Link>
+          </div>
+          <div className="grid--split">
+            {enrollment ? (
+              <BarChartCard
+                title="Enrollment by programme"
+                subtitle={`${enrollment.total} active students`}
+                data={enrollmentByProgramme}
+                xKey="programme"
+                series={[{ key: "students", label: "Students" }]}
+              />
+            ) : null}
+            {revenue ? (
+              <DonutChartCard
+                title="Revenue: collected vs outstanding"
+                data={[
+                  { key: "collected", label: "Collected", value: Number(revenue.collected), color: CHART_STATUS.good },
+                  { key: "outstanding", label: "Outstanding", value: Number(revenue.outstanding), color: CHART_STATUS.bad },
+                ]}
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
+
+      <div className="dashboard-section">
+        <h2>Explore</h2>
+      </div>
+      {sections.map((section) => (
+        <div key={section} style={{ marginBottom: 8 }}>
+          <div className="section-title">{section}</div>
+          <div className="grid grid--compact">
+            {links
+              .filter((item) => item.section === section)
+              .map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} className="card card--interactive quick-link" style={{ margin: 0 }}>
+                    <span className="quick-link__icon">
+                      <Icon size={18} />
+                    </span>
+                    <span className="quick-link__body">
+                      <span className="quick-link__title">{item.label}</span>
+                      <span className="quick-link__desc">{item.description}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+          </div>
+        </div>
+      ))}
+
       <div className="card">
         <div className="card__header">
           <span className="card__icon">
-            <LayersIcon size={18} />
+            <CheckCircleIcon size={18} />
           </span>
           <h2>What&rsquo;s live</h2>
         </div>
         <ul style={{ margin: "4px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
           {[
             "Foundation — accounts, roles, the audit trail, curriculum and the student registry",
-            "Admissions & enrollment — applications, merit lists, course registration",
-            "Timetabling, attendance & examinations — schedules, offline attendance capture, results",
+            "Admissions, enrollment, timetabling, attendance and examinations",
+            "Finance, HR, library and hostel",
+            "Documents & certification, communications, alumni and reporting & analytics",
           ].map((line) => (
             <li key={line} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <CheckCircleIcon size={18} style={{ color: "var(--status-verified)", marginTop: 1, flexShrink: 0 }} />
@@ -185,10 +296,6 @@ export default function DashboardPage() {
             </li>
           ))}
         </ul>
-        <p className="muted text-sm" style={{ marginTop: 14, marginBottom: 0 }}>
-          Registrars and other back-office staff still do most day-to-day work in the
-          Django admin; this portal covers the self-service and offline-first paths.
-        </p>
       </div>
     </>
   );

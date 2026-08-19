@@ -3,11 +3,9 @@
 /**
  * Student self-service portal — overview (FR-STU-01…14 / checklist §4.16).
  *
- * Consolidates what a student needs in one place. Sections backed by a real
- * API call show real data; sections with no backend yet (fees, library,
- * hostel, graduation clearance, notifications) say so plainly rather than
- * showing invented numbers — the same "never fabricate data" rule the rest
- * of this system follows.
+ * Consolidates what a student needs in one place. Every section below is
+ * backed by a real API call — fees, library, hostel and graduation
+ * clearance included, now that those modules exist.
  */
 
 import Link from "next/link";
@@ -15,10 +13,12 @@ import { useEffect, useState } from "react";
 
 import { Stamp } from "@/components/Stamp";
 import {
-  BuildingIcon,
+  BedIcon,
+  BookOpenIcon,
   CalendarIcon,
   ClockIcon,
   CreditCardIcon,
+  FileTextIcon,
   LayersIcon,
   UserPlusIcon,
 } from "@/components/icons";
@@ -35,11 +35,11 @@ interface Student {
   status: string;
 }
 
-const COMING_SOON = [
-  { label: "Fee invoices & payment", icon: CreditCardIcon, note: "Finance module — Phase 4" },
-  { label: "Library loans & fines", icon: LayersIcon, note: "Library module — Phase 5" },
-  { label: "Hostel allocation", icon: BuildingIcon, note: "Hostel module — Phase 5" },
-  { label: "Graduation clearance", icon: LayersIcon, note: "Documents module — Phase 6" },
+const QUICK_LINKS = [
+  { href: "/my/finance", label: "Fees & payments", icon: CreditCardIcon, description: "Invoices, receipts and your balance." },
+  { href: "/library", label: "Library", icon: BookOpenIcon, description: "The catalogue and your loans." },
+  { href: "/hostel", label: "Hostel", icon: BedIcon, description: "Your room allocation." },
+  { href: "/documents", label: "Documents", icon: FileTextIcon, description: "Transcript requests and clearance." },
 ];
 
 export default function StudentPortalPage() {
@@ -50,6 +50,8 @@ export default function StudentPortalPage() {
   const [registeredCount, setRegisteredCount] = useState<number | null>(null);
   const [gpa, setGpa] = useState<string | null | undefined>(undefined);
   const [resultsPublished, setResultsPublished] = useState<boolean | null>(null);
+  const [balance, setBalance] = useState<string | null>(null);
+  const [clear, setClear] = useState<boolean | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [offline, setOffline] = useState(false);
 
@@ -79,6 +81,13 @@ export default function StudentPortalPage() {
             setResultsPublished(result.published && !result.withheld);
             setGpa(result.gpa);
           }
+          const [feeBalance, clearance] = await Promise.all([
+            api.myFeeBalance(me.id).catch(() => null),
+            api.myClearance(me.id).catch(() => null),
+          ]);
+          if (cancelled) return;
+          if (feeBalance) setBalance(feeBalance.balance);
+          if (clearance) setClear(clearance.clear);
         }
       } catch (error) {
         if (error instanceof ApiFailure && error.offline) setOffline(true);
@@ -191,34 +200,59 @@ export default function StudentPortalPage() {
         </div>
       </div>
 
+      {loaded && (balance !== null || clear !== null) ? (
+        <div className="grid">
+          {balance !== null ? (
+            <div className={`card stat stat--accent-${Number(balance) > 0 ? "rose" : "teal"}`}>
+              <div className="stat__top">
+                <span className="stat__label">Fee balance</span>
+                <span className="stat__icon">
+                  <CreditCardIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{Number(balance) > 0 ? Number(balance).toLocaleString() : "0"}</div>
+              <div className="stat__foot">
+                <Link href="/my/finance">View invoices →</Link>
+              </div>
+            </div>
+          ) : null}
+          {clear !== null ? (
+            <div className={`card stat stat--accent-${clear ? "teal" : "amber"}`}>
+              <div className="stat__top">
+                <span className="stat__label">Graduation clearance</span>
+                <span className="stat__icon">
+                  <FileTextIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value" style={{ fontSize: "1.25rem" }}>
+                {clear ? "Clear" : "Holds outstanding"}
+              </div>
+              <div className="stat__foot">
+                <Link href="/documents">View documents →</Link>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="card">
         <div className="card__header">
           <span className="card__icon">
-            <BuildingIcon size={18} />
+            <CreditCardIcon size={18} />
           </span>
-          <h2>Coming soon</h2>
+          <h2>More of your portal</h2>
         </div>
-        <p className="muted text-sm" style={{ marginTop: -4 }}>
-          These sections are part of the full self-service portal but the modules behind
-          them are not built yet — shown here so the plan stays visible, not hidden.
-        </p>
-        <div className="grid" style={{ marginTop: 8 }}>
-          {COMING_SOON.map(({ label, icon: Icon, note }) => (
-            <div
-              key={label}
-              className="card"
-              style={{ margin: 0, opacity: 0.6, boxShadow: "none" }}
-            >
-              <div className="stat__top">
-                <span className="stat__label">{label}</span>
-                <span className="stat__icon" style={{ background: "var(--surface-sunken)", color: "var(--muted)" }}>
-                  <Icon size={18} />
-                </span>
-              </div>
-              <p className="text-sm muted" style={{ margin: "8px 0 0" }}>
-                {note}
-              </p>
-            </div>
+        <div className="grid grid--compact">
+          {QUICK_LINKS.map(({ href, label, icon: Icon, description }) => (
+            <Link key={href} href={href} className="card card--interactive quick-link" style={{ margin: 0 }}>
+              <span className="quick-link__icon">
+                <Icon size={18} />
+              </span>
+              <span className="quick-link__body">
+                <span className="quick-link__title">{label}</span>
+                <span className="quick-link__desc">{description}</span>
+              </span>
+            </Link>
           ))}
         </div>
       </div>

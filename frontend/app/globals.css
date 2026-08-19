@@ -97,6 +97,21 @@
   --stat-teal-container: var(--status-verified-bg);
   --stat-amber: var(--status-pending);
   --stat-amber-container: var(--status-pending-bg);
+  --stat-purple: #6a3f82;
+  --stat-purple-container: #efe6f3;
+  --stat-rose: #a13f63;
+  --stat-rose-container: #f6e7ee;
+
+  /* Chart series — a fixed categorical order, drawn from the same
+     institutional family as everything else rather than a generic palette,
+     so a revenue or enrollment chart still reads as this university's. */
+  --chart-1: var(--ink);
+  --chart-2: var(--seal);
+  --chart-3: #1f7a72;
+  --chart-4: #7a3b69;
+  --chart-5: #5b6b85;
+  --chart-grid: var(--border);
+  --chart-tick: var(--muted);
 
   /* Tighter, flatter radii than a consumer-SaaS rounding — the reference
      design reads as an official records system, not a startup dashboard. */
@@ -133,10 +148,10 @@
   --topbar-h: 64px;
   --nav-w: 256px;
 
-  /* Fixed brand fill for the few large panels (the sidebar, the login hero)
-     that must stay the university's navy regardless of anything else on the
-     page — never swapped, so a themeable future doesn't have to special-case
-     them the way `--primary` would need if it also drove text-on-dark. */
+  /* Fixed brand fill for the login hero panel, which stays the university's
+     navy regardless of anything else on the page — never swapped, so a
+     themeable future doesn't have to special-case it the way `--primary`
+     would need to if it also drove text-on-dark. */
   --brand-hero-start: var(--ink);
   --brand-hero-end: var(--ink-strong);
 }
@@ -202,17 +217,18 @@ svg {
   color: var(--text);
 }
 
-/* ---- sidebar: full height, always the university's navy — the one
-   element that never changes with the content beside it. Static in the
-   sense that was asked for: nothing about it scrolls or moves as the
-   content column does. ---- */
+/* ---- sidebar: full height, a plain white panel separated from the content
+   by a hairline border rather than a colour change. Static in the sense
+   that was asked for: nothing about it scrolls or moves as the content
+   column does. ---- */
 
 .sidebar {
   width: var(--nav-w);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--ink);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -230,7 +246,7 @@ svg {
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-5) var(--sp-4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -266,27 +282,27 @@ svg {
   font-weight: 700;
   font-size: 0.9375rem;
   line-height: 1.2;
-  color: #ffffff;
+  color: var(--ink);
   white-space: nowrap;
 }
 
 .sidebar__brand-sub {
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted);
   white-space: nowrap;
 }
 
 .sidebar__collapse-btn {
   margin-left: auto;
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--muted);
   background: transparent;
   padding: var(--sp-1);
 }
 
 .sidebar__collapse-btn:hover {
-  color: #ffffff;
-  background: transparent;
+  color: var(--ink);
+  background: var(--surface-sunken);
 }
 
 .sidebar__nav {
@@ -299,7 +315,7 @@ svg {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--muted);
   margin: var(--sp-5) var(--sp-1) var(--sp-2) var(--sp-3);
 }
 
@@ -321,11 +337,12 @@ svg {
   margin-bottom: 2px;
   border-radius: var(--radius-sm);
   border-left: 3px solid transparent;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--muted-strong);
   text-decoration: none;
   font-size: 0.9375rem;
   font-weight: 500;
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
 }
 
 .nav__link svg {
@@ -334,20 +351,21 @@ svg {
 }
 
 .nav__link:hover {
-  background: var(--ink-soft);
-  color: #ffffff;
+  background: var(--surface-sunken);
+  color: var(--ink);
+  transform: translateX(1px);
 }
 
 .nav__link[aria-current="page"] {
-  background: rgba(184, 134, 46, 0.18);
+  background: var(--seal-container);
   border-left-color: var(--seal);
-  color: #ffffff;
+  color: var(--ink-strong);
   font-weight: 700;
 }
 
 .nav__link[aria-current="page"] svg {
   opacity: 1;
-  color: var(--seal);
+  color: var(--seal-strong);
 }
 
 .nav__badge {
@@ -368,7 +386,7 @@ svg {
 .sidebar__footer {
   flex-shrink: 0;
   padding: var(--sp-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .nav-backdrop {
@@ -551,6 +569,22 @@ h2 {
 
 /* -------------------------------------------------------------- components */
 
+/* A card fades and lifts gently into place rather than simply appearing —
+   applied once, on mount, never re-triggered by a re-render (React keeps
+   the element; the animation only replays if the node is actually
+   recreated). Reduced-motion users get the `animation-duration: 0.001ms`
+   override declared once, near the top of this file. */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -558,6 +592,44 @@ h2 {
   padding: var(--sp-5) var(--sp-6);
   margin-bottom: var(--gap);
   box-shadow: var(--shadow-sm);
+  animation: card-in 0.4s var(--ease) both;
+}
+
+/* Stagger a row of cards instead of having every one fade in at once — up
+   to a reasonable number; beyond that they are all visible together
+   anyway, so a shared delay is enough. */
+.grid > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.grid > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.grid > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.grid > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.grid > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+.grid > *:nth-child(n + 6) {
+  animation-delay: 200ms;
+}
+
+/* Reserved for a card that is itself a link or button — a stat tile is
+   informational and stays still; a quick-link or catalogue tile answers
+   "go here" and lifting on hover is what says so. */
+.card--interactive {
+  transition: transform var(--normal) var(--ease), box-shadow var(--normal) var(--ease),
+    border-color var(--normal) var(--ease);
+  cursor: pointer;
+}
+
+.card--interactive:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
 }
 
 .card__header {
@@ -598,6 +670,164 @@ h2 {
   display: grid;
   gap: var(--gap);
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* A denser variant for a wall of small tiles (quick links, module cards)
+   where the 220px default reads too sparse once there are six or more. */
+.grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Two-thirds/one-third split for a chart beside its supporting numbers —
+   collapses to a single column before the chart gets too cramped to read. */
+.grid--split {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 2fr 1fr;
+}
+
+@media (max-width: 860px) {
+  .grid--split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-section {
+  margin: var(--sp-8) 0 var(--sp-4);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.dashboard-section:first-of-type {
+  margin-top: 0;
+}
+
+.dashboard-section h2 {
+  font-size: 1rem;
+}
+
+.dashboard-section__link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--seal-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dashboard-section__link:hover {
+  text-decoration: underline;
+}
+
+/* A card that is itself a navigation link — the dashboard's "everything in
+   the sidebar is reachable from here too" hub. */
+.quick-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  text-decoration: none;
+  color: inherit;
+}
+
+.quick-link__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  flex-shrink: 0;
+  transition: background var(--normal) var(--ease), color var(--normal) var(--ease);
+}
+
+.quick-link__body {
+  min-width: 0;
+}
+
+.quick-link__title {
+  display: block;
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+
+.quick-link__desc {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.quick-link:hover .quick-link__icon {
+  background: var(--seal);
+  color: #ffffff;
+}
+
+.quick-link:hover .quick-link__title {
+  color: var(--seal-strong);
+}
+
+/* -------------------------------------------------------------- charts */
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.chart-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.chart-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  margin: 0;
+}
+
+.chart-card__subtitle {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  font-size: 0.8125rem;
+  color: var(--muted-strong);
+}
+
+.chart-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .section-title {
@@ -928,6 +1158,11 @@ button.sm {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-sm);
+  transition: transform var(--normal) var(--ease);
+}
+
+.stat:hover .stat__icon {
+  transform: scale(1.1) rotate(-4deg);
 }
 
 .stat__value {
@@ -958,6 +1193,16 @@ button.sm {
 .stat--accent-amber .stat__icon {
   background: var(--stat-amber-container);
   color: var(--stat-amber);
+}
+
+.stat--accent-purple .stat__icon {
+  background: var(--stat-purple-container);
+  color: var(--stat-purple);
+}
+
+.stat--accent-rose .stat__icon {
+  background: var(--stat-rose-container);
+  color: var(--stat-rose);
 }
 
 /* --------------------------------------------------- connection + outbox */
@@ -1243,7 +1488,7 @@ tbody tr:last-child td {
 }
 
 .menu__trigger:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-sunken);
 }
 
 .menu__name {
