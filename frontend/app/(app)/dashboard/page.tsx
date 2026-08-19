@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+import { Stamp } from "@/components/Stamp";
 import { StatTile, StatTileSkeleton } from "@/components/StatTile";
 import {
   CalendarIcon,
+  CheckCircleIcon,
   InboxIcon,
   LayersIcon,
   UsersIcon,
@@ -144,21 +146,48 @@ export default function DashboardPage() {
         />
       </div>
 
+      {calendarLoaded && calendar?.configured ? (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <Stamp
+            status={calendar.registration_open ? "verified" : "hold"}
+            label={calendar.registration_open ? "Open" : "Closed"}
+            size="sm"
+          />
+          <div>
+            <h2>Registration {calendar.registration_open ? "is open" : "is closed"}</h2>
+            <p className="muted" style={{ margin: "4px 0 0" }}>
+              {calendar.semester?.name ?? "The current semester"} ·{" "}
+              {calendar.academic_year?.name ?? "current academic year"}.{" "}
+              {calendar.registration_open
+                ? "Students may register for courses."
+                : "Course registration is closed for this window."}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="card">
         <div className="card__header">
           <span className="card__icon">
             <LayersIcon size={18} />
           </span>
-          <h2>What this build covers</h2>
+          <h2>What&rsquo;s live</h2>
         </div>
-        <p className="muted">
-          Phase 1 is the foundation: accounts and roles, the audit trail, the
-          curriculum hierarchy, the student registry, and the offline-sync
-          mechanism that attendance and grade entry will use in Phase 3.
-        </p>
-        <p className="muted">
-          Registrars do their day-to-day work in the Django admin for now; this
-          interface exists to prove the offline path end to end.
+        <ul style={{ margin: "4px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+          {[
+            "Foundation — accounts, roles, the audit trail, curriculum and the student registry",
+            "Admissions & enrollment — applications, merit lists, course registration",
+            "Timetabling, attendance & examinations — schedules, offline attendance capture, results",
+          ].map((line) => (
+            <li key={line} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <CheckCircleIcon size={18} style={{ color: "var(--status-verified)", marginTop: 1, flexShrink: 0 }} />
+              <span className="muted">{line}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="muted text-sm" style={{ marginTop: 14, marginBottom: 0 }}>
+          Registrars and other back-office staff still do most day-to-day work in the
+          Django admin; this portal covers the self-service and offline-first paths.
         </p>
       </div>
     </>

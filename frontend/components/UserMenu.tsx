@@ -12,7 +12,17 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function UserMenu({ user, onSignOut }: { user: Me; onSignOut: () => void }) {
+export function UserMenu({
+  user,
+  onSignOut,
+  align = "down",
+}: {
+  user: Me;
+  onSignOut: () => void;
+  /** "up" opens the panel above the trigger — for a footer-anchored menu
+   * (the sidebar), where "down" would run off the bottom of the viewport. */
+  align?: "up" | "down";
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,7 +49,7 @@ export function UserMenu({ user, onSignOut }: { user: Me; onSignOut: () => void 
   const primaryRole = user.roles[0] ?? "no role";
 
   return (
-    <div className="menu" ref={ref}>
+    <div className={`menu ${align === "up" ? "menu--up" : ""}`} ref={ref}>
       <button
         type="button"
         className="menu__trigger"

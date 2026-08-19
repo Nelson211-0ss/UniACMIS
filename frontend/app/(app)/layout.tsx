@@ -8,9 +8,14 @@ import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { UserMenu } from "@/components/UserMenu";
 import {
   AlertCircleIcon,
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
   DashboardIcon,
   GraduationCapIcon,
   InboxIcon,
+  LayersIcon,
   MenuIcon,
   UserPlusIcon,
   UsersIcon,
@@ -25,6 +30,8 @@ interface NavItem {
   icon: (props: { size?: number }) => ReactNode;
   /** Permission the API requires for the destination, or null for everyone. */
   permission: string | null;
+  /** Shown only to one of these roles, or everyone if omitted. */
+  roles?: string[];
   section: string;
 }
 
@@ -35,6 +42,46 @@ const NAV: NavItem[] = [
     icon: DashboardIcon,
     permission: null,
     section: "Overview",
+  },
+  {
+    href: "/my",
+    label: "My portal",
+    icon: LayersIcon,
+    permission: null,
+    roles: ["student"],
+    section: "Student",
+  },
+  {
+    href: "/my/courses",
+    label: "Course registration",
+    icon: UserPlusIcon,
+    permission: "enrollment.view_courseregistration",
+    roles: ["student"],
+    section: "Student",
+  },
+  {
+    href: "/my/timetable",
+    label: "Timetable",
+    icon: CalendarIcon,
+    permission: "timetabling.view_timetableentry",
+    roles: ["student"],
+    section: "Student",
+  },
+  {
+    href: "/my/results",
+    label: "Results & appeals",
+    icon: LayersIcon,
+    permission: "examinations.view_mark",
+    roles: ["student"],
+    section: "Student",
+  },
+  {
+    href: "/my/attendance",
+    label: "Attendance",
+    icon: ClockIcon,
+    permission: "attendance.view_sessionrecord",
+    roles: ["student"],
+    section: "Student",
   },
   {
     href: "/students",
@@ -62,8 +109,9 @@ const NAV: NavItem[] = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, signOut, can } = useAuth();
+  const { user, loading, signOut, can, hasRole } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [queued, setQueued] = useState(0);
 
   useEffect(() => {
@@ -95,54 +143,38 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   // Navigation is filtered by permission for usability. The API is the actual
   // boundary — a hidden link is not a security control.
-  const visible = NAV.filter((item) => !item.permission || can(item.permission));
+  const visible = NAV.filter(
+    (item) =>
+      (!item.permission || can(item.permission)) && (!item.roles || hasRole(...item.roles)),
+  );
   const sections = [...new Set(visible.map((item) => item.section))];
 
   return (
     <div className="app">
-      <header className="topbar">
-        <button
-          type="button"
-          className="topbar__menu-btn icon-btn"
-          onClick={() => setNavOpen((v) => !v)}
-          aria-label={navOpen ? "Close menu" : "Open menu"}
-          aria-expanded={navOpen}
-        >
-          {navOpen ? <XIcon /> : <MenuIcon />}
-        </button>
+      <div className={`nav-backdrop ${navOpen ? "is-open" : ""}`} onClick={() => setNavOpen(false)} />
 
-        <Link href="/dashboard" className="topbar__brand">
-          <span className="topbar__brand-mark">
-            <GraduationCapIcon size={18} />
-          </span>
-          <span className="hide-xs">UniACMIS</span>
-        </Link>
-
-        <span className="topbar__spacer" />
-
-        <div className="topbar__actions">
-          <ConnectionStatus />
-          <UserMenu
-            user={user}
-            onSignOut={() => void signOut().then(() => router.replace("/login"))}
-          />
+      <aside className={`sidebar ${navOpen ? "is-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
+        <div className="sidebar__brand">
+          <Link href="/dashboard" className="sidebar__brand-link">
+            <span className="sidebar__brand-mark">
+              <GraduationCapIcon size={18} />
+            </span>
+            <span className="sidebar__brand-text">
+              <span className="sidebar__brand-name">UniACMIS</span>
+              <span className="sidebar__brand-sub">Academic Management</span>
+            </span>
+          </Link>
+          <button
+            type="button"
+            className="sidebar__collapse-btn icon-btn"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRightIcon size={16} /> : <ChevronLeftIcon size={16} />}
+          </button>
         </div>
-      </header>
 
-      {user.must_change_password ? (
-        <div className="alert alert--warning" style={{ margin: "16px 16px 0" }}>
-          <AlertCircleIcon size={18} />
-          <span>
-            This account is still using the password it was created with. Change it
-            before doing anything else.
-          </span>
-        </div>
-      ) : null}
-
-      <div className="shell">
-        <div className={`nav-backdrop ${navOpen ? "is-open" : ""}`} onClick={() => setNavOpen(false)} />
-
-        <nav className={`nav ${navOpen ? "is-open" : ""}`} aria-label="Main">
+        <nav className="sidebar__nav" aria-label="Main">
           {sections.map((section) => (
             <div key={section}>
               <div className="nav__section">{section}</div>
@@ -156,10 +188,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                       key={item.href}
                       href={item.href}
                       className="nav__link"
+                      title={collapsed ? item.label : undefined}
                       aria-current={active ? "page" : undefined}
                     >
                       <Icon size={18} />
-                      {item.label}
+                      <span className="nav__link-label">{item.label}</span>
                       {item.href === "/outbox" && queued > 0 ? (
                         <span className="nav__badge">{queued}</span>
                       ) : null}
@@ -169,6 +202,51 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
+
+        <div className="sidebar__footer">
+          <UserMenu
+            user={user}
+            align="up"
+            onSignOut={() => void signOut().then(() => router.replace("/login"))}
+          />
+        </div>
+      </aside>
+
+      <div className="main">
+        <header className="topbar">
+          <button
+            type="button"
+            className="topbar__menu-btn icon-btn"
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label={navOpen ? "Close menu" : "Open menu"}
+            aria-expanded={navOpen}
+          >
+            {navOpen ? <XIcon /> : <MenuIcon />}
+          </button>
+
+          <Link href="/dashboard" className="topbar__brand">
+            <span className="topbar__brand-mark">
+              <GraduationCapIcon size={16} />
+            </span>
+            UniACMIS
+          </Link>
+
+          <span className="topbar__spacer" />
+
+          <div className="topbar__actions">
+            <ConnectionStatus />
+          </div>
+        </header>
+
+        {user.must_change_password ? (
+          <div className="alert alert--warning" style={{ margin: "16px 16px 0" }}>
+            <AlertCircleIcon size={18} />
+            <span>
+              This account is still using the password it was created with. Change it
+              before doing anything else.
+            </span>
+          </div>
+        ) : null}
 
         <main className="content">{children}</main>
       </div>

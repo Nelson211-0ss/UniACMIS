@@ -187,8 +187,10 @@ export const api = {
     return request<{
       configured: boolean;
       registration_open: boolean;
-      academic_year: { name: string } | null;
-      semester: { name: string } | null;
+      add_drop_open: boolean;
+      exam_period: boolean;
+      academic_year: { id: number; name: string } | null;
+      semester: { id: number; name: string; sequence: number; academic_year_name: string } | null;
     }>("/academics/calendar/");
   },
 
@@ -216,6 +218,174 @@ export const api = {
         status: string;
       }>;
     }>(`/registry/students/${params}`);
+  },
+
+  // ------------------------------------------------------- student portal
+
+  /** The signed-in student's own registry record — scoped to self by the
+   * API, so this is always "me", never a lookup by id. */
+  async myStudent() {
+    const page = await request<{
+      results: Array<{ id: number; student_id: string; full_name: string; programme: number; current_level: number; status: string }>;
+    }>("/registry/students/?page_size=1");
+    const summary = page.results[0];
+    if (!summary) return null;
+    return request<{
+      id: number;
+      student_id: string;
+      full_name: string;
+      programme: number;
+      programme_code: string;
+      programme_name: string;
+      curriculum_version: number | null;
+      current_level: number;
+      status: string;
+    }>(`/registry/students/${summary.id}/`);
+  },
+
+  curriculumVersion(id: number) {
+    return request<{
+      id: number;
+      programme: number;
+      version: string;
+      courses: Array<{
+        id: number;
+        course: number;
+        course_code: string;
+        course_title: string;
+        credit_hours: number;
+        year_of_study: number;
+        semester_sequence: number;
+        is_core: boolean;
+      }>;
+    }>(`/curriculum/curriculum-versions/${id}/`);
+  },
+
+  myRegistrations(semesterId?: number) {
+    const query = semesterId ? `?semester=${semesterId}&page_size=100` : "?page_size=100";
+    return request<{
+      results: Array<{
+        id: number;
+        student: number;
+        course: number;
+        course_code: string;
+        course_title: string;
+        credit_hours: number;
+        semester: number;
+        semester_display: string;
+        status: string;
+        is_repeat: boolean;
+        drop_reason: string;
+        dropped_at: string | null;
+        created_at: string;
+      }>;
+    }>(`/enrollment/registrations/${query}`);
+  },
+
+  registerCourse(studentId: number, courseId: number, semesterId: number) {
+    return request<{ id: number; status: string }>("/enrollment/registrations/", {
+      method: "POST",
+      body: { student: studentId, course: courseId, semester: semesterId },
+    });
+  },
+
+  dropRegistration(registrationId: number, reason: string) {
+    return request<{ id: number; status: string }>(
+      `/enrollment/registrations/${registrationId}/drop/`,
+      { method: "POST", body: { reason } },
+    );
+  },
+
+  weeklyTimetable(semesterId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        course_code: string;
+        course_title: string;
+        room_code: string;
+        lecturer_name: string;
+        day_of_week: number;
+        day_of_week_display: string;
+        start_time: string;
+        end_time: string;
+      }>;
+    }>(`/timetabling/entries/?semester=${semesterId}&page_size=100`);
+  },
+
+  examTimetable(semesterId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        course_code: string;
+        course_title: string;
+        room_code: string;
+        invigilator_names: string[];
+        exam_date: string;
+        start_time: string;
+        end_time: string;
+      }>;
+    }>(`/timetabling/exam-entries/?semester=${semesterId}&page_size=100`);
+  },
+
+  attendanceSummary(registrationId: number) {
+    return request<{ sessions_recorded: number; sessions_attended: number; percentage: string | null }>(
+      `/attendance/registrations/${registrationId}/summary/`,
+    );
+  },
+
+  examEligibility(registrationId: number) {
+    return request<{
+      sessions_recorded: number;
+      sessions_attended: number;
+      percentage: string | null;
+      threshold: string;
+      below_threshold: boolean;
+      waived: boolean;
+      eligible: boolean;
+    }>(`/attendance/registrations/${registrationId}/eligibility/`);
+  },
+
+  studentResult(studentId: number, semesterId: number) {
+    return request<{
+      published: boolean;
+      withheld: boolean;
+      holds?: Array<{ code: string; message: string }>;
+      courses: Array<{
+        registration_id: number;
+        course_id?: number;
+        components: Array<{ assessment: string; weight_percent: string; score: string | null; max_score?: string }>;
+        complete: boolean;
+        has_irregularity: boolean;
+        configuration_error: string | null;
+        percent: string | null;
+        letter: string | null;
+        grade_point: string | null;
+        is_pass: boolean | null;
+      }>;
+      gpa: string | null;
+    }>(`/examinations/students/${studentId}/semesters/${semesterId}/result/`);
+  },
+
+  myAppeals() {
+    return request<{
+      results: Array<{
+        id: number;
+        registration: number;
+        assessment: number | null;
+        reason: string;
+        status: string;
+        decision_notes: string;
+        decided_at: string | null;
+        created_at: string;
+      }>;
+    }>("/examinations/appeals/?page_size=100");
+  },
+
+  submitAppeal(registrationId: number, reason: string, assessmentId?: number) {
+    return request<{ id: number; status: string }>("/examinations/appeals/", {
+      method: "POST",
+      body: { registration: registrationId, assessment: assessmentId ?? null, reason },
+    });
   },
 
   syncEntities() {

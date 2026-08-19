@@ -133,6 +133,22 @@ export function ChevronDownIcon({ size = 16, ...props }: IconProps) {
   );
 }
 
+export function ChevronLeftIcon({ size = 16, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="m15 6-6 6 6 6" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ size = 16, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
 export function CheckCircleIcon({ size = 18, ...props }: IconProps) {
   return (
     <svg {...base(size)} {...props}>
@@ -294,6 +310,16 @@ export function PhoneIcon({ size = 18, ...props }: IconProps) {
   return (
     <svg {...base(size)} {...props}>
       <path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a1.5 1.5 0 0 1-1.6 1.5A18 18 0 0 1 5 6.6 1.5 1.5 0 0 1 6.5 3Z" />
+    </svg>
+  );
+}
+
+export function CreditCardIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <rect x="2.5" y="5" width="19" height="14" rx="2" />
+      <path d="M2.5 9.5h19" />
+      <path d="M6 14.5h4" />
     </svg>
   );
 }
