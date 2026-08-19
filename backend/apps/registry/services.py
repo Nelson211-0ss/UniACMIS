@@ -162,6 +162,16 @@ def change_status(
     return student
 
 
+def get_programme_id(student_id: int) -> int:
+    """A student's current programme, without the caller importing `Student`.
+
+    `enrollment` needs this to read the programme's credit limits (FR-ENR-02)
+    — a service call rather than a model import, per the module boundary
+    rules (ARCHITECTURE §4).
+    """
+    return Student.objects.values_list("programme_id", flat=True).get(pk=student_id)
+
+
 def registration_holds(student_id: int) -> list[dict[str, Any]]:
     """Holds preventing this student from registering (FR-ENR-03).
 

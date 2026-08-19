@@ -8,6 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.accounts.mixins import ScopedQuerysetMixin
+from apps.core.mixins import CreateWithResponseSerializerMixin
 from apps.core.permissions import HasModulePermission
 from apps.registry import services
 from apps.registry.models import Sponsor, StaffProfile, Student, StudentStatusHistory
@@ -22,7 +23,7 @@ from apps.registry.serializers import (
 )
 
 
-class StudentViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
+class StudentViewSet(ScopedQuerysetMixin, CreateWithResponseSerializerMixin, viewsets.ModelViewSet):
     """Student records.
 
     Holding `registry.view_student` answers "may this user read student records?".
@@ -33,6 +34,7 @@ class StudentViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
     queryset = Student.objects.select_related(
         "programme", "programme__department", "entry_academic_year", "sponsor"
     )
+    response_serializer_class = StudentSerializer
     permission_classes = [HasModulePermission]
     required_permissions = {
         "GET": "registry.view_student",

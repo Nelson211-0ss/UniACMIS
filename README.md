@@ -7,13 +7,15 @@ enrollment, timetabling, attendance, examinations, finance, HR, library, hostel,
 communications, alumni and statutory reporting — designed to keep working through the power and
 connectivity interruptions that are normal in its operating environment.
 
-> ## Status: Phase 1 (Foundation) — built and passing
+> ## Status: Phase 3 (Academic Operations) — built and passing
 >
-> Six Django apps (`core`, `audit`, `accounts`, `academics`, `curriculum`, `registry`), a thin PWA shell
-> with a working offline outbox, **234 tests green**, three module-boundary contracts enforced, and a
-> verifiable audit chain over the seeded data.
+> Nine Django apps built across three phases — Phase 1's foundation (`core`, `audit`, `accounts`,
+> `academics`, `curriculum`, `registry`), Phase 2's `admissions` and `enrollment`, and Phase 3's
+> `timetabling`, `attendance` and `examinations` — plus a thin PWA shell with a working offline outbox,
+> **450 tests green**, three module-boundary contracts enforced, and a verifiable audit chain over the
+> seeded data.
 >
-> Phase 2 (Admissions & Enrollment) has not started. Design docs:
+> Phase 4 (Finance) has not started. Design docs:
 > [ARCHITECTURE.md](docs/ARCHITECTURE.md) · [DATA_MODEL.md](docs/DATA_MODEL.md) ·
 > [PHASE1_TASKS.md](docs/PHASE1_TASKS.md) · [TRACEABILITY.md](docs/TRACEABILITY.md)
 

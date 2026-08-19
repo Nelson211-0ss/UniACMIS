@@ -96,6 +96,30 @@ REGISTRY_MANAGE = (
     "registry.verify_studentdocument",
 )
 
+# An applicant's own application only (FR-ADM-01) — enforced by queryset
+# scoping, same pattern as REGISTRY_MANAGE vs a student's own record.
+ADMISSIONS_SELF = (
+    "admissions.add_application",
+    "admissions.view_application",
+    "admissions.change_application",
+    "admissions.add_applicationdocument",
+    "admissions.view_applicationdocument",
+    "admissions.add_applicationfeepayment",
+    "admissions.view_applicationfeepayment",
+)
+
+# The registrar's office: intake, review, decision and conversion to a student
+# record (FR-ADM-01…08). `decide_application` is the one permission that gates
+# both offering/rejecting AND generating the merit list — both reveal or act on
+# rankings across every applicant to a programme, not just one record.
+ADMISSIONS_MANAGE = (
+    *write("admissions.application"),
+    *write("admissions.applicationdocument"),
+    *write("admissions.applicationreview"),
+    *write("admissions.applicationfeepayment"),
+    "admissions.decide_application",
+)
+
 # Written now so the rule they encode is testable in Phase 1, even though the
 # modules land later.
 GRADE_WRITE_PERMISSIONS = frozenset(
@@ -129,9 +153,14 @@ ROLES: tuple[RoleDefinition, ...] = (
         code="applicant",
         name="Applicant",
         description="Prospective student. Can apply and track their own application.",
-        # Everything an applicant may see is their own record, enforced by
-        # queryset scoping in Phase 2 rather than by a broad permission here.
-        permissions=(),
+        permissions=(
+            *ADMISSIONS_SELF,
+            # To populate the application form: which programmes exist, which
+            # intake year is open. Everything else an applicant may see is their
+            # own record, enforced by queryset scoping, not a broader permission.
+            *CURRICULUM_READ,
+            *ACADEMICS_READ,
+        ),
     ),
     RoleDefinition(
         code="student",
@@ -145,6 +174,19 @@ ROLES: tuple[RoleDefinition, ...] = (
             *ro("registry.studentdocument"),
             *CURRICULUM_READ,
             *ACADEMICS_READ,
+            # A student manages their own registration (FR-ENR-01…03); the
+            # scoping that limits this to *their own* rows lives in the
+            # viewset, the same pattern as their own record and documents above.
+            *write("enrollment.courseregistration"),
+            # Phase 3: their own published timetable, exam schedule and
+            # attendance record — all narrowed by queryset scoping, not by a
+            # different permission than the lecturer holds.
+            "timetabling.view_timetableentry",
+            "timetabling.view_examtimetable",
+            "attendance.view_sessionrecord",
+            "examinations.view_mark",
+            "examinations.add_gradeappeal",
+            "examinations.view_gradeappeal",
         ),
     ),
     RoleDefinition(
@@ -158,10 +200,15 @@ ROLES: tuple[RoleDefinition, ...] = (
             *ro("registry.student"),
             *CURRICULUM_READ,
             *ACADEMICS_READ,
+            # Class lists for their own teaching (FR-ENR-04).
+            "enrollment.view_courseregistration",
             # Phase 3
+            "timetabling.view_timetableentry",
+            "timetabling.view_examtimetable",
             "attendance.add_sessionrecord",
             "attendance.change_sessionrecord",
             "attendance.view_sessionrecord",
+            "examinations.view_assessment",
             "examinations.add_mark",
             "examinations.change_mark",
             "examinations.view_mark",
@@ -180,11 +227,16 @@ ROLES: tuple[RoleDefinition, ...] = (
             *CURRICULUM_READ,
             *ACADEMICS_READ,
             "curriculum.change_curriculumcourse",
+            "enrollment.view_courseregistration",
             # Phase 3
             "attendance.view_sessionrecord",
             "examinations.view_mark",
             "examinations.moderate_result",
+            "examinations.view_gradeappeal",
+            "examinations.change_gradeappeal",
+            "examinations.decide_gradeappeal",
             "timetabling.view_timetableentry",
+            "timetabling.view_examtimetable",
         ),
     ),
     RoleDefinition(
@@ -201,16 +253,22 @@ ROLES: tuple[RoleDefinition, ...] = (
             *ro("core.syncoperation"),
             *ro("core.syncconflict"),
             # Phase 2 onward
-            "admissions.view_application",
-            "admissions.change_application",
-            "admissions.decide_application",
+            *ADMISSIONS_MANAGE,
             "enrollment.add_courseregistration",
             "enrollment.change_courseregistration",
             "enrollment.view_courseregistration",
             "enrollment.override_hold",
+            "enrollment.record_completion",
             "documents.add_transcriptrequest",
             "documents.change_transcriptrequest",
             "documents.issue_certificate",
+            # Phase 3: the registrar's office builds and publishes the class
+            # timetable (FR-TT-01…03) — the exam timetable stays with the
+            # examinations office, so registrar gets read access to it only.
+            *crud("timetabling.room"),
+            *crud("timetabling.timetableentry"),
+            "timetabling.view_examtimetable",
+            "attendance.view_sessionrecord",
         ),
     ),
     RoleDefinition(
@@ -256,13 +314,21 @@ ROLES: tuple[RoleDefinition, ...] = (
             "examinations.add_assessment",
             "examinations.change_assessment",
             "examinations.view_assessment",
+            "examinations.add_mark",
             "examinations.view_mark",
             "examinations.change_mark",
             "examinations.moderate_result",
+            "examinations.flag_irregularity",
             "examinations.publish_result",
+            "examinations.view_gradeappeal",
+            "examinations.change_gradeappeal",
+            "examinations.decide_gradeappeal",
             "timetabling.add_examtimetable",
             "timetabling.change_examtimetable",
+            "timetabling.delete_examtimetable",
             "timetabling.view_examtimetable",
+            "attendance.view_sessionrecord",
+            "attendance.override_block",
         ),
     ),
     RoleDefinition(
@@ -367,6 +433,12 @@ ROLES: tuple[RoleDefinition, ...] = (
             *CURRICULUM_READ,
             *ACADEMICS_READ,
             *ro("audit.auditlog"),
+            # Phase 3: read-only visibility for dashboards and KPIs, the same
+            # boundary every other Phase 3 read grant here observes.
+            "timetabling.view_timetableentry",
+            "timetabling.view_examtimetable",
+            "attendance.view_sessionrecord",
+            "examinations.view_mark",
             # Phase 6
             "reporting.view_dashboard",
             "reporting.export_statutoryreport",

@@ -21,14 +21,14 @@ Phases follow the implementation plan: 1 Foundation · 2 Admissions & Enrollment
 
 | ID | Requirement | Phase | Status | Notes |
 |---|---|---|---|---|
-| FR-ADM-01 | Online application with bio-data + document upload | 2 | 📋 | |
-| FR-ADM-02 | Offline/paper application intake by staff | 2 | 📋 | Uses the Phase 1 sync engine |
-| FR-ADM-03 | Configurable programme entry requirements + validation | 2 | 🧱 | `Programme.entry_requirements` JSON exists in Phase 1 |
-| FR-ADM-04 | Application fee recorded + reconciled before completion | 2/4 | 📋 | Needs `PaymentProvider`; mock exists Phase 1 |
-| FR-ADM-05 | Admissions committee review with configurable scoring | 2 | 📋 | |
-| FR-ADM-06 | Merit lists with quota rules (state, gender, disability, sponsorship) | 2 | 🧱 | Phase 1 captures the disaggregation fields the quotas need |
-| FR-ADM-07 | Offer/rejection letters via portal, email, SMS | 2/6 | 🧱 | `NotificationProvider` interface defined Phase 1 |
-| FR-ADM-08 | Convert accepted application → student record, auto student ID | 2 | 🧱 | ID generator built and tested in Phase 1 |
+| FR-ADM-01 | Online application with bio-data + document upload | 2 | ✅ | `Application`, `ApplicationDocument`; `eligibility_warnings()` before submit |
+| FR-ADM-02 | Offline/paper application intake by staff | 2 | 🧱 | `ApplicationSource.STAFF_ENTRY` lets staff key in a paper form online; no offline sync handler registered for it yet, unlike `registry.student` and Phase 3's `attendance`/`examinations` entities |
+| FR-ADM-03 | Configurable programme entry requirements + validation | 2 | ✅ | `eligibility.py` (pure functions) reads `Programme.entry_requirements` from Phase 1 |
+| FR-ADM-04 | Application fee recorded + reconciled before completion | 2/4 | ✅ | `initiate_fee_payment`/`confirm_fee_payment` via the Phase 1 mock `PaymentProvider`; `submit_application` requires `fee_paid=True`. Real aggregator is Phase 4. |
+| FR-ADM-05 | Admissions committee review with configurable scoring | 2 | ✅ | `ApplicationReview` (one per reviewer, upserts) recomputes the average score |
+| FR-ADM-06 | Merit lists with quota rules (state, gender, disability, sponsorship) | 2 | ✅ | `merit_list.py` (pure functions): reserved quotas fill first, underfilled seats revert to the general pool |
+| FR-ADM-07 | Offer/rejection letters via portal, email, SMS | 2/6 | 🧱 | `decide_application` triggers `NotificationProvider.send_sms/send_email` (console/mock in Phase 1); a failed send does not block the decision. Real SMS aggregator is Phase 6. |
+| FR-ADM-08 | Convert accepted application → student record, auto student ID | 2 | ✅ | `convert_to_student()` calls `registry.services.create_student`, reusing the Phase 1 ID generator |
 
 ### 3.2 Student records (core registry)
 
@@ -55,39 +55,39 @@ Phases follow the implementation plan: 1 Foundation · 2 Admissions & Enrollment
 | ID | Requirement | Phase | Status | Notes |
 |---|---|---|---|---|
 | FR-ENR-01 | Academic calendar controlling registration/add-drop/exam windows | **1**/2 | ✅ | `AcademicYear`/`Semester` windows modelled Phase 1; enforced Phase 2 |
-| FR-ENR-02 | Prerequisite + credit-limit validation | 2 | 🧱 | `Prerequisite`, `Programme.max_credits_per_semester` in place |
+| FR-ENR-02 | Prerequisite + credit-limit validation | 2 | ✅ | `register_course()` raises `PrerequisiteNotMet`/`CreditLimitExceeded` against Phase 1's `Prerequisite` and `Programme.max_credits_per_semester` |
 | FR-ENR-03 | Registration holds (fees, discipline, missing documents), configurable | 2/4 | ✅ | Provider interface + fake finance provider + tests in Phase 1 |
-| FR-ENR-04 | Auto-generated class lists | 2 | 📋 | |
-| FR-ENR-05 | Repeat/carry-over unit tracking | 3 | 📋 | |
+| FR-ENR-04 | Auto-generated class lists | 2 | ✅ | `enrollment.services.class_list()`, ordered for a printable register |
+| FR-ENR-05 | Repeat/carry-over unit tracking | 2 | ✅ | `CourseRegistration.is_repeat`, set automatically by `register_course()` |
 
 ### 3.5 Timetabling
 
 | ID | Requirement | Phase | Status | Notes |
 |---|---|---|---|---|
-| FR-TT-01 | Automated clash-free timetable generation | 3 | 📋 | Manual entry + clash detection first; auto-generation a stretch goal |
-| FR-TT-02 | Manual override | 3 | 📋 | |
-| FR-TT-03 | Publish to portal + printable PDF for notice boards | 3 | 📋 | Print path matters for students without smartphones |
-| FR-TT-04 | Exam timetable with invigilator assignment | 3 | 📋 | |
+| FR-TT-01 | Automated clash-free timetable generation | 3 | ✅ | Manual entry + room/lecturer clash detection, per D-3; auto-generation remains a stretch goal |
+| FR-TT-02 | Manual override | 3 | ✅ | A registrar edits any entry; `update_entry` re-runs the same clash checks |
+| FR-TT-03 | Publish to portal + printable PDF for notice boards | 3 | 🧱 | Publish workflow + role-scoped read API done; a bare HTML print view stands in for a PDF renderer (no new binary dependency added for Phase 3 — see D-8) |
+| FR-TT-04 | Exam timetable with invigilator assignment | 3 | ✅ | `ExamTimetable` + M2M invigilators, room/invigilator clash detection, bounded to the semester's exam window |
 
 ### 3.6 Attendance
 
 | ID | Requirement | Phase | Status | Notes |
 |---|---|---|---|---|
-| FR-ATT-01 | Offline attendance capture with later sync | 3 | 🧱 | Sync engine + outbox proven in Phase 1; handler registered Phase 3 |
-| FR-ATT-02 | Threshold flagging + exam block with authorised override | 3 | 🧱 | `Institution.attendance_threshold_percent` configurable from Phase 1 |
+| FR-ATT-01 | Offline attendance capture with later sync | 3 | ✅ | `SessionRecordHandler` registered; proven end-to-end via the batch sync API |
+| FR-ATT-02 | Threshold flagging + exam block with authorised override | 3 | ✅ | `attendance.services.exam_eligibility()` + `AttendanceWaiver` (`attendance.override_block`, examinations office only) |
 
 ### 3.7 Examinations & assessment
 
 | ID | Requirement | Phase | Status | Notes |
 |---|---|---|---|---|
-| FR-EXM-01 | CA score entry with configurable weighting | 3 | 📋 | |
-| FR-EXM-02 | Grade-entry deadline enforcement + late-submission logging | 3 | 📋 | |
-| FR-EXM-03 | Moderation / second-marking workflow | 3 | 📋 | |
-| FR-EXM-04 | Automatic GPA/CGPA per configured grading scale | **1**/3 | ✅ | `GradingScale`/`GradeBand` + tested pure `gpa()`/`cgpa()` in Phase 1 |
-| FR-EXM-05 | Senate/exam board approval before release | 3 | 📋 | Hard gate on publication |
-| FR-EXM-06 | Withhold results for arrears/discipline, configurable | 3/4 | 🧱 | Reuses the hold-provider registry |
-| FR-EXM-07 | Grade appeal / remark workflow | 3 | 📋 | |
-| FR-EXM-08 | Missing-mark and irregularity flagging | 3 | 📋 | |
+| FR-EXM-01 | CA score entry with configurable weighting | 3 | ✅ | `Assessment` (per-course scheme) + `Mark`; weights validated at the point a result is computed, not on each row (D-9) |
+| FR-EXM-02 | Grade-entry deadline enforcement + late-submission logging | 3 | ✅ | `Assessment.grade_entry_deadline`; late entry is logged (`Mark.is_late`) rather than blocked — see D-9 |
+| FR-EXM-03 | Moderation / second-marking workflow | 3 | ✅ | `examinations.moderate_result`, held by `hod` only — distinct from the marking lecturer |
+| FR-EXM-04 | Automatic GPA/CGPA per configured grading scale | **1**/3 | ✅ | `GradingScale`/`GradeBand` + pure `gpa()`/`cgpa()` from Phase 1, now wired to real marks via `course_result()`/`semester_gpa()` |
+| FR-EXM-05 | Senate/exam board approval before release | 3 | ✅ | `ResultApproval`: `approve_result` (Senate) and `publish_result` (examinations office) are distinct permissions, held by neither role at once |
+| FR-EXM-06 | Withhold results for arrears/discipline, configurable | 3 | ✅ | `student_result()` checks `core.services.holds.blocking_holds()` at read time; a published result stays withheld until the hold clears, with no separate "unwithhold" step |
+| FR-EXM-07 | Grade appeal / remark workflow | 3 | ✅ | `GradeAppeal`: a student submits their own; `hod`/`examinations` decide via `examinations.decide_gradeappeal` |
+| FR-EXM-08 | Missing-mark and irregularity flagging | 3 | ✅ | `missing_marks_report()`; `Mark.is_irregular` excludes a disputed mark from its course result until cleared |
 
 ### 3.8 Finance & fees
 
@@ -190,6 +190,9 @@ Phases follow the implementation plan: 1 Foundation · 2 Admissions & Enrollment
 | D-4 | Placeholder Django apps for future modules | Not created | Only apps with real models exist, so enforced boundaries are visible. Structure documented in ARCHITECTURE.md §3. |
 | D-5 | **`senate` role split from `management`** | Accepted | SRS §2.2 lists them together, but `FR-EXM-05` needs approval to be an authority the examinations office does not hold. 13 roles rather than 12. |
 | D-6 | `seed_demo` lives in `registry`, not `core` | Accepted | It constructs data across every app, so it belongs at the top of the layering, not underneath it. Exempted from the models-import contract with a stated reason. |
+| D-7 | Student-cohort clash detection (`FR-TT-01`) | Deferred | `timetabling` detects a room or lecturer double-booking — both provable today, since a room is one place and a lecturer is one person. Detecting that two courses a *student* must take were scheduled at once needs a class-group/section model this system does not have yet; auto-generation (D-3) is blocked on the same gap. |
+| D-8 | Printable exam/class timetable as a rendered PDF (`FR-TT-03`) | Deferred — HTML print view instead | A binary PDF renderer (e.g. WeasyPrint) needs system libraries (Cairo/Pango) added to the Docker image for a need a browser's own print-to-PDF already satisfies. Revisit if a headless export (e-mail attachment, batch print run) is actually requested. |
+| D-9 | Assessment weight-sum validation (`FR-EXM-01`) | Validated at result computation, not at each write | A lecturer builds a CA scheme one component at a time; rejecting "CA1: 20%" for not summing to 100% on its own would make incremental entry impossible. `course_result()` checks the full scheme sums to 100% before computing a grade from it, the same "validate where it's used" choice `grade_for()` makes for a gapped grading scale. |
 
 ## Open items awaiting stakeholder confirmation (SRS §8)
 
@@ -228,3 +231,46 @@ Run from a clean clone with `make up && make migrate && make seed`:
 
 Additions made during implementation, both recorded above: the `senate` role (D-5) and
 `apps/core/choices.py` for reference data shared by more than one app.
+
+## Phase 2 verification (recorded 2026-08-18)
+
+Admissions and enrollment, against the same checklist as Phase 1:
+
+| Check | Command | Result |
+|---|---|---|
+| Test suite | `pytest` | **351 passed** (117 new: admissions + enrollment) |
+| Module boundaries | `lint-imports` | 3 contracts kept, 0 broken |
+| Style | `ruff check .` · `black --check .` | clean |
+| Migrations match models | `manage.py makemigrations --check --dry-run` | no drift |
+| RBAC policy applied | `manage.py seed_roles` | idempotent; Phase 3+ permissions still deferred |
+| Audit chain | `manage.py verify_audit_chain` | 152 entries verified, chain intact |
+
+Two Phase 1 bugs surfaced and fixed while building on top of it: DRF's default `create()`
+re-serialised a new instance through the same narrow input serializer, silently dropping
+generated fields like `reference_number` (fixed with `apps.core.mixins.CreateWithResponseSerializerMixin`,
+applied to `admissions` and retrofitted onto `registry`); and the demo fee-hold provider's
+"every 5th student ID is a defaulter" heuristic caused unrelated tests to fail depending on
+Postgres's PK sequence state, since sequences do not roll back with a test transaction — removed,
+replaced with explicit seeding in `seed_demo`.
+
+## Phase 3 verification (recorded 2026-08-19)
+
+Timetabling, attendance and examinations:
+
+| Check | Command | Result |
+|---|---|---|
+| Test suite | `pytest` | **450 passed** (99 new: timetabling + attendance + examinations) |
+| Module boundaries | `lint-imports` | 3 contracts kept, 0 broken |
+| Style | `ruff check .` · `black --check .` | clean |
+| Migrations match models | `manage.py makemigrations --check --dry-run` | no drift |
+| RBAC policy applied | `manage.py seed_roles` | idempotent; only Phase 4+ permissions still deferred |
+| Audit chain | `manage.py verify_audit_chain` | 159 entries verified, chain intact |
+
+Notable bugs found and fixed while building this phase: a viewset's coarse per-HTTP-method
+permission map was gating custom actions (`GradeAppealViewSet.decide`, `ResultApprovalViewSet.approve`/
+`reject`) by the *base* method's permission before the action's own, more specific check ever ran —
+so Senate's own `approve_result` permission never mattered, because POST already required
+`publish_result` first. Fixed with a per-action `get_permissions()` override on both viewsets. A second:
+`course_result()` let an unconfigured (or gapped) grading scale raise an unhandled
+`GradingConfigurationError` instead of surfacing it the same way as any other misconfigured
+assessment scheme.

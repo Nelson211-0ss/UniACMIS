@@ -26,6 +26,11 @@ api_v1 = [
     path("academics/", include("apps.academics.urls")),
     path("curriculum/", include("apps.curriculum.urls")),
     path("registry/", include("apps.registry.urls")),
+    path("admissions/", include("apps.admissions.urls")),
+    path("enrollment/", include("apps.enrollment.urls")),
+    path("timetabling/", include("apps.timetabling.urls")),
+    path("attendance/", include("apps.attendance.urls")),
+    path("examinations/", include("apps.examinations.urls")),
     path("sync/", include("apps.core.sync.urls")),
     path("audit/", include("apps.audit.urls")),
     # Schema and docs

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.utils import timezone
@@ -180,7 +181,7 @@ def test_an_unknown_entity_is_rejected_not_ignored(registrar, as_user):
             "operations": [
                 {
                     "client_op_id": str(uuid.uuid4()),
-                    "entity": "attendance.session_record",  # arrives in Phase 3
+                    "entity": "finance.payment",  # arrives in Phase 4
                     "action": "create",
                     "payload": {},
                 }
@@ -536,3 +537,161 @@ def test_a_synced_record_links_back_to_its_operation(
     record = SyncOperation.objects.get(client_op_id=outcome.client_op_id)
     assert record.target is not None
     assert record.target.pk == outcome.result["id"]
+
+
+# ------------------------------------------------------------- attendance (Phase 3)
+
+
+def test_the_attendance_handler_is_registered():
+    assert get_handler("attendance.sessionrecord") is not None
+
+
+@pytest.mark.integration
+def test_attendance_can_be_recorded_offline_and_synced(
+    lecturer, course, semester, student, registrar, as_user
+):
+    """The Phase 1 spine, proven end to end for the entity it was built for
+    (FR-ATT-01): a lecturer's device queues a register during an outage and
+    flushes it once the link returns."""
+    from datetime import time
+
+    from apps.attendance.models import AttendanceStatus, SessionRecord
+    from apps.enrollment.services import register_course
+    from apps.timetabling.models import DayOfWeek
+    from apps.timetabling.services import create_entry
+
+    entry = create_entry(
+        course_id=course.pk,
+        semester_id=semester.pk,
+        day_of_week=DayOfWeek.MONDAY,
+        start_time=time(9, 0),
+        end_time=time(11, 0),
+        lecturer_id=lecturer.staff_profile.pk,
+        actor=None,
+    )
+    registration = register_course(
+        student_id=student.pk, course_id=course.pk, semester_id=semester.pk, actor=registrar
+    )
+
+    operation = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "attendance.sessionrecord",
+        "action": "create",
+        "payload": {
+            "timetable_entry_id": entry.pk,
+            "session_date": str(semester.teaching_start),
+            "registration_id": registration.pk,
+            "status": AttendanceStatus.PRESENT,
+        },
+        "device_id": "lecturer-tablet-03",
+    }
+
+    response = as_user(lecturer).post(BATCH_URL, {"operations": [operation]}, format="json")
+
+    assert response.status_code == 200
+    assert response.data["results"][0]["status"] == SyncStatus.APPLIED
+    assert SessionRecord.objects.filter(registration=registration).count() == 1
+
+    replay = as_user(lecturer).post(BATCH_URL, {"operations": [operation]}, format="json")
+    assert replay.data["results"][0]["status"] == SyncStatus.DUPLICATE
+    assert SessionRecord.objects.filter(registration=registration).count() == 1
+
+
+# ------------------------------------------------------------ examinations (Phase 3)
+
+
+def test_the_mark_handler_is_registered():
+    assert get_handler("examinations.mark") is not None
+
+
+def test_the_mark_handler_declares_flag_for_review():
+    assert registered_entities()["examinations.mark"] == ConflictPolicy.FLAG_FOR_REVIEW
+
+
+@pytest.mark.integration
+def test_a_divergent_mark_is_flagged_not_overwritten(
+    lecturer, course, semester, student, registrar, as_user
+):
+    """CLAUDE.md's rule made concrete: unlike attendance, two different
+    scores for the same mark are not resolved by picking one."""
+    from apps.enrollment.services import register_course
+    from apps.examinations import services
+    from apps.examinations.models import Mark
+
+    assessment = services.create_assessment(
+        course_id=course.pk, name="CA1", weight_percent=Decimal("100")
+    )
+    registration = register_course(
+        student_id=student.pk, course_id=course.pk, semester_id=semester.pk, actor=registrar
+    )
+
+    first = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "examinations.mark",
+        "action": "create",
+        "payload": {
+            "registration_id": registration.pk,
+            "assessment_id": assessment.pk,
+            "score": "70",
+        },
+    }
+    response = as_user(lecturer).post(BATCH_URL, {"operations": [first]}, format="json")
+    assert response.data["results"][0]["status"] == SyncStatus.APPLIED
+
+    diverging = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "examinations.mark",
+        "action": "update",
+        "payload": {
+            "registration_id": registration.pk,
+            "assessment_id": assessment.pk,
+            "score": "75",
+        },
+    }
+    conflict = as_user(lecturer).post(BATCH_URL, {"operations": [diverging]}, format="json")
+
+    assert conflict.data["results"][0]["status"] == SyncStatus.CONFLICT
+    assert Mark.objects.get(registration=registration, assessment=assessment).score == Decimal("70")
+    assert SyncConflict.objects.filter(entity="examinations.mark").exists()
+
+
+@pytest.mark.integration
+def test_the_same_score_queued_twice_applies_cleanly(
+    lecturer, course, semester, student, registrar, as_user
+):
+    """The same score re-sent (a device retrying after a dropped response) is
+    not a disagreement and must not be held for review."""
+    from apps.enrollment.services import register_course
+    from apps.examinations import services
+
+    assessment = services.create_assessment(
+        course_id=course.pk, name="CA1", weight_percent=Decimal("100")
+    )
+    registration = register_course(
+        student_id=student.pk, course_id=course.pk, semester_id=semester.pk, actor=registrar
+    )
+
+    first = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "examinations.mark",
+        "action": "create",
+        "payload": {
+            "registration_id": registration.pk,
+            "assessment_id": assessment.pk,
+            "score": "70",
+        },
+    }
+    as_user(lecturer).post(BATCH_URL, {"operations": [first]}, format="json")
+
+    same_value_again = {
+        "client_op_id": str(uuid.uuid4()),
+        "entity": "examinations.mark",
+        "action": "update",
+        "payload": {
+            "registration_id": registration.pk,
+            "assessment_id": assessment.pk,
+            "score": "70",
+        },
+    }
+    response = as_user(lecturer).post(BATCH_URL, {"operations": [same_value_again]}, format="json")
+    assert response.data["results"][0]["status"] == SyncStatus.APPLIED

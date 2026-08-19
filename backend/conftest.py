@@ -230,8 +230,23 @@ def lecturer(roles, staff_factory) -> User:
 
 
 @pytest.fixture
+def hod(roles, staff_factory) -> User:
+    return staff_factory("hod", email="hod@test.ss")
+
+
+@pytest.fixture
 def finance_officer(roles, user_factory) -> User:
     return user_factory(role="finance", email="finance@test.ss")
+
+
+@pytest.fixture
+def examinations_officer(roles, user_factory) -> User:
+    return user_factory(role="examinations", email="examinations@test.ss")
+
+
+@pytest.fixture
+def senate_member(roles, user_factory) -> User:
+    return user_factory(role="senate", email="senate@test.ss")
 
 
 @pytest.fixture
@@ -271,6 +286,16 @@ def student(programme, curriculum_version, academic_year, institution):
         national_id_number="SSD00000001",
         reason="test fixture",
     )
+
+
+@pytest.fixture
+def student_portal_user(roles, user_factory, student) -> User:
+    """Links the registry `student` fixture to a portal account holding the
+    `student` role, so `ScopedQuerysetMixin`'s self-scoping filters match."""
+    user = user_factory(role="student", email="student-portal@test.ss")
+    student.user = user
+    student.save(update_fields=["user"])
+    return user
 
 
 @pytest.fixture(autouse=True)

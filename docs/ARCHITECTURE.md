@@ -88,11 +88,11 @@ obscure which boundaries are actually enforced.
 | `academics` | `Institution`, academic calendar, `GradingScale`/`GradeBand`, GPA computation | 1 | **built** |
 | `curriculum` | Faculty → Department → Programme → Course, curriculum versioning, prerequisites | 1 | **built** |
 | `registry` | `Student`, `StaffProfile`, status history, next-of-kin, sponsor, document vault | 1 | **built** |
-| `admissions` | Application intake (online + staff entry), review workflow, merit lists, offers | 2 | planned |
-| `enrollment` | Course registration, prerequisite/credit validation, holds, class lists | 2 | planned |
-| `timetabling` | Class and exam timetables, clash detection, room/invigilator allocation | 3 | planned |
-| `attendance` | Session registers, offline capture, threshold alerts | 3 | planned |
-| `examinations` | CA and final marks, moderation, GPA/CGPA, Senate approval gate | 3 | planned |
+| `admissions` | Application intake (online + staff entry), review workflow, merit lists, offers | 2 | **built** |
+| `enrollment` | Course registration, prerequisite/credit validation, holds, class lists | 2 | **built** |
+| `timetabling` | Class and exam timetables, clash detection, room/invigilator allocation | 3 | **built** |
+| `attendance` | Session registers, offline capture, threshold alerts | 3 | **built** |
+| `examinations` | CA and final marks, moderation, GPA/CGPA, Senate approval gate | 3 | **built** |
 | `finance` | Fee structures, invoicing, payments, reconciliation, scholarships, refunds | 4 | planned |
 | `hr` | Staff contracts, qualifications, leave, appraisal, payroll export | 5 | planned |
 | `library` | Catalogue, circulation with offline sync, fines | 5 | planned |

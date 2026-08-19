@@ -147,6 +147,17 @@ class Programme(AuditedModel, TimeStampedModel, SoftDeleteModel):
             'e.g. {"min_certificate_grade": "C", "required_subjects": ["Mathematics"]}.'
         ),
     )
+    admission_quota_rules = models.JSONField(
+        _("admission quota rules"),
+        default=dict,
+        blank=True,
+        help_text=_(
+            "Merit list seat allocation (FR-ADM-06), e.g. "
+            '{"total_seats": 50, "reserved": [{"category": "state", "value": '
+            '"warrap", "seats": 5}]}. Empty means no cap — every applicant ranks '
+            "and none is excluded."
+        ),
+    )
 
     description = models.TextField(_("description"), blank=True)
     is_active = models.BooleanField(

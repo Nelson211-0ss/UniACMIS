@@ -20,6 +20,7 @@ from django.urls import URLPattern, URLResolver, get_resolver
 from rest_framework.views import APIView
 
 from apps.accounts.roles import (
+    ADMISSIONS_SELF,
     GRADE_WRITE_PERMISSIONS,
     MONEY_WRITE_PERMISSIONS,
     ROLES,
@@ -200,8 +201,23 @@ def test_management_is_read_only():
     assert not writes, f"management should be read-only but holds {writes}"
 
 
-def test_applicants_hold_no_permissions():
-    assert ROLES_BY_CODE["applicant"].permissions == ()
+def test_applicants_hold_no_permission_beyond_applying_and_browsing_reference_data():
+    """Phase 1's invariant was "applicants hold no permissions at all" —
+    correct when admissions did not exist yet. Phase 2 gives them exactly what
+    self-service application requires (FR-ADM-01): their own application, and
+    read access to the programmes/calendar data the form needs. Everything
+    else — every other app's data, every write outside admissions — must stay
+    off, which is the invariant actually worth protecting now."""
+    held = set(ROLES_BY_CODE["applicant"].permissions)
+
+    assert held, "applicants need at least the self-service application permissions"
+    other_apps = {p.split(".", 1)[0] for p in held} - {"admissions", "curriculum", "academics"}
+    assert not other_apps, f"applicant should not hold permissions in {other_apps}"
+
+    writes = {p for p in held if p.split(".", 1)[1].startswith(("add_", "change_", "delete_"))}
+    assert writes.issubset(
+        set(ADMISSIONS_SELF)
+    ), f"applicant should only write their own admissions records, found {writes - set(ADMISSIONS_SELF)}"
 
 
 # --------------------------------------------------------- role × endpoint
@@ -283,7 +299,9 @@ MATRIX: dict[str, dict[str, bool]] = {
     "applicant": {
         "students_list": False,
         "student_create": False,
-        "faculties_list": False,
+        # Now allowed: browsing programmes is how an applicant fills in the
+        # application form (FR-ADM-01) — CURRICULUM_READ, added in Phase 2.
+        "faculties_list": True,
         "faculty_create": False,
         "users_list": False,
         "audit_list": False,

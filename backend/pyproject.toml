@@ -104,6 +104,11 @@ include_external_packages = true
 name = "Cross-cutting layers: a lower layer never imports a higher one"
 type = "layers"
 layers = [
+    "apps.examinations",
+    "apps.attendance",
+    "apps.timetabling",
+    "apps.enrollment",
+    "apps.admissions",
     "apps.registry",
     "apps.curriculum",
     "apps.academics",
@@ -126,6 +131,11 @@ forbidden_modules = [
     "apps.academics",
     "apps.curriculum",
     "apps.registry",
+    "apps.admissions",
+    "apps.enrollment",
+    "apps.timetabling",
+    "apps.attendance",
+    "apps.examinations",
 ]
 ignore_imports = ["apps.*.tests.** -> **"]
 # Not every contract has a test import to ignore, and a pattern that matches
@@ -143,11 +153,21 @@ source_modules = [
     "apps.academics",
     "apps.curriculum",
     "apps.registry",
+    "apps.admissions",
+    "apps.enrollment",
+    "apps.timetabling",
+    "apps.attendance",
+    "apps.examinations",
 ]
 forbidden_modules = [
     "apps.academics.models",
     "apps.curriculum.models",
     "apps.registry.models",
+    "apps.admissions.models",
+    "apps.enrollment.models",
+    "apps.timetabling.models",
+    "apps.attendance.models",
+    "apps.examinations.models",
 ]
 allow_indirect_imports = true
 ignore_imports = [

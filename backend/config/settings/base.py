@@ -77,6 +77,11 @@ LOCAL_APPS = [
     "apps.academics",
     "apps.curriculum",
     "apps.registry",
+    "apps.admissions",
+    "apps.enrollment",
+    "apps.timetabling",
+    "apps.attendance",
+    "apps.examinations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

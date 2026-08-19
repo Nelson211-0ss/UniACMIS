@@ -42,6 +42,12 @@ def current_semester() -> Semester | None:
     return Semester.objects.filter(is_current=True).select_related("academic_year").first()
 
 
+def get_semester(semester_id: int) -> Semester:
+    """Look up a specific semester by id, for callers (`enrollment`) that must
+    not import the `Semester` model directly across the app boundary."""
+    return Semester.objects.select_related("academic_year").get(pk=semester_id)
+
+
 def require_current_semester() -> Semester:
     semester = current_semester()
     if semester is None:

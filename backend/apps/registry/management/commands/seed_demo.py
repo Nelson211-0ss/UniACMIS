@@ -36,6 +36,7 @@ from apps.accounts.roles import ROLES
 from apps.accounts.services import grant_role
 from apps.core import context
 from apps.core.choices import SouthSudanState
+from apps.core.providers.holds import DEMO_DEFAULT_BALANCE, set_demo_balance
 from apps.curriculum.models import (
     Award,
     Course,
@@ -60,6 +61,7 @@ from apps.registry.models import (
 from apps.registry.services import create_student
 
 DEMO_PASSWORD = "UniACMIS#Demo2026"
+DEMO_HOLD_EVERY_NTH = 5
 
 # 4.00-point scale. The exact boundaries are an institutional policy decision
 # (SRS §8 open item 4) — this is a documented default, not a claim about any
@@ -624,6 +626,15 @@ class Command(BaseCommand):
                 phone=f"+21192{2000000 + index}",
                 is_primary=True,
             )
+
+            # Every 5th student carries a stub fee hold, so /students/{id}/holds/
+            # shows the blocked path without extra setup. Set explicitly, on the
+            # seeded student's own id — the hold provider itself no longer infers
+            # this from an id's arithmetic, which made it leak into unrelated
+            # tests whenever a test's own students happened to land on the same
+            # residue class.
+            if index % DEMO_HOLD_EVERY_NTH == 0:
+                set_demo_balance(student.pk, DEMO_DEFAULT_BALANCE)
 
 
 def _dt(day: date, offset_days: int):

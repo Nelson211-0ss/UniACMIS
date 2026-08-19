@@ -126,6 +126,14 @@ def total_credits(course_ids: Iterable[int]) -> int:
     )
 
 
+def admission_quota_rules(programme_id: int) -> dict[str, object]:
+    """A programme's merit-list seat configuration (FR-ADM-06), read without
+    the caller importing the `Programme` model directly."""
+    return (
+        Programme.objects.values_list("admission_quota_rules", flat=True).get(pk=programme_id) or {}
+    )
+
+
 def id_tokens_for_programme(programme_id: int) -> dict[str, str]:
     """Faculty and programme codes used to build a student ID (FR-REG-01).
 
