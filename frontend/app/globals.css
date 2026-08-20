@@ -1497,6 +1497,14 @@ tbody tr:last-child td {
   font-size: 1.5rem;
 }
 
+/* An actual photo reads as an ID card, not a chat-app initials coin — square
+   with just enough corner rounding to match the rest of the shell, never a
+   circle crop. Only ever paired with an `<img>`, never the initials `<span>`. */
+.avatar--square {
+  border-radius: var(--radius-xs);
+  object-fit: cover;
+}
+
 /* ------------------------------------------------------------------- pill */
 
 .pill {

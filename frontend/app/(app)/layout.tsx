@@ -14,6 +14,7 @@ import {
   MenuIcon,
   XIcon,
 } from "@/components/icons";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { visibleNav } from "@/lib/nav";
 import * as outbox from "@/lib/outbox";
@@ -25,10 +26,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [queued, setQueued] = useState(0);
+  const [studentPhoto, setStudentPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
+
+  const isStudent = hasRole("student");
+  useEffect(() => {
+    if (!isStudent) return;
+    api
+      .myStudent()
+      .then((student) => setStudentPhoto(student?.photo ?? null))
+      .catch(() => undefined);
+  }, [isStudent]);
 
   // Close the mobile drawer on navigation, so a link tap doesn't leave it open
   // over the next page.
@@ -116,6 +127,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <UserMenu
             user={user}
             align="up"
+            photoUrl={studentPhoto}
             onSignOut={() => void signOut().then(() => router.replace("/login"))}
           />
         </div>

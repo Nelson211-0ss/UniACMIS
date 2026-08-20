@@ -33,7 +33,24 @@ interface Appeal {
   created_at: string;
 }
 
+interface StudentIdentity {
+  full_name: string;
+  student_id: string;
+  programme_name: string;
+  current_level: number;
+  photo: string | null;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function ResultsPage() {
+  const [student, setStudent] = useState<StudentIdentity | null>(null);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const [semesterName, setSemesterName] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
   const [withheld, setWithheld] = useState(false);
@@ -58,6 +75,7 @@ export default function ResultsPage() {
         api.myAppeals().catch(() => ({ results: [] as Appeal[] })),
       ]);
       setAppeals(myAppeals.results);
+      if (me) setStudent(me);
       if (!me || !calendar.semester) {
         setState("ready");
         return;
@@ -118,6 +136,30 @@ export default function ResultsPage() {
           <p className="page-subtitle">{semesterName ?? "Results"}</p>
         </div>
       </div>
+
+      {student ? (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+          {student.photo && !photoFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={student.photo}
+              alt=""
+              className="avatar avatar--lg avatar--square"
+              onError={() => setPhotoFailed(true)}
+            />
+          ) : (
+            <span className="avatar avatar--lg avatar--square" aria-hidden="true">
+              {initials(student.full_name)}
+            </span>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <h2>{student.full_name}</h2>
+            <p className="muted" style={{ margin: "4px 0 0" }}>
+              {student.student_id} &middot; {student.programme_name} &middot; Year {student.current_level}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {notice ? (
         <div className={`alert alert--${notice.kind === "success" ? "success" : "error"}`}>

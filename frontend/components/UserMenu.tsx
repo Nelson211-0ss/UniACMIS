@@ -16,14 +16,21 @@ export function UserMenu({
   user,
   onSignOut,
   align = "down",
+  photoUrl,
 }: {
   user: Me;
   onSignOut: () => void;
   /** "up" opens the panel above the trigger — for a footer-anchored menu
    * (the sidebar), where "down" would run off the bottom of the viewport. */
   align?: "up" | "down";
+  /** A student's registry photo, when there is one — shown square, not in
+   * the round initials circle, the same way an ID card holds a photo
+   * rather than cropping it into a coin. Falls back to initials on error
+   * or when there is none (staff have no registry photo at all). */
+  photoUrl?: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,7 +64,17 @@ export function UserMenu({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="avatar avatar--sm">{initials(user.full_name)}</span>
+        {photoUrl && !photoFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt=""
+            className="avatar avatar--sm avatar--square"
+            onError={() => setPhotoFailed(true)}
+          />
+        ) : (
+          <span className="avatar avatar--sm">{initials(user.full_name)}</span>
+        )}
         <span className="menu__name">
           <strong>{user.full_name}</strong>
           <span>{primaryRole.replace(/_/g, " ")}</span>
