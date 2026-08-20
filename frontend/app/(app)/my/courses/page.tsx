@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { AlertCircleIcon, CheckCircleIcon, UserPlusIcon, XIcon } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
 
+import { useStudent } from "../student-context";
+
 interface CurriculumCourseRow {
   id: number;
   course: number;
@@ -31,7 +33,7 @@ interface Registration {
 }
 
 export default function CourseRegistrationPage() {
-  const [studentId, setStudentId] = useState<number | null>(null);
+  const { student, loaded: studentLoaded } = useStudent();
   const [semester, setSemester] = useState<{ id: number; name: string; sequence: number } | null>(
     null,
   );
@@ -44,24 +46,23 @@ export default function CourseRegistrationPage() {
 
   async function load() {
     try {
-      const [me, calendar] = await Promise.all([api.myStudent(), api.calendar()]);
-      if (!me || !calendar.semester) {
+      const calendar = await api.calendar();
+      if (!student || !calendar.semester) {
         setState("ready");
         return;
       }
-      setStudentId(me.id);
       setSemester(calendar.semester);
       setRegistrationOpen(calendar.registration_open);
 
       const [version, regs] = await Promise.all([
-        me.curriculum_version ? api.curriculumVersion(me.curriculum_version) : null,
+        student.curriculum_version ? api.curriculumVersion(student.curriculum_version) : null,
         api.myRegistrations(calendar.semester.id),
       ]);
       setCourses(
         version
           ? version.courses.filter(
               (c) =>
-                c.year_of_study === me.current_level &&
+                c.year_of_study === student.current_level &&
                 c.semester_sequence === calendar.semester!.sequence,
             )
           : [],
@@ -74,15 +75,17 @@ export default function CourseRegistrationPage() {
   }
 
   useEffect(() => {
+    if (!studentLoaded) return;
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentLoaded, student]);
 
   async function register(courseId: number) {
-    if (!studentId || !semester) return;
+    if (!student || !semester) return;
     setBusyCourse(courseId);
     setNotice(null);
     try {
-      await api.registerCourse(studentId, courseId, semester.id);
+      await api.registerCourse(student.id, courseId, semester.id);
       setNotice({ kind: "success", text: "Registered." });
       await load();
     } catch (error) {

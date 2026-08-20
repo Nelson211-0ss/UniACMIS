@@ -5,12 +5,15 @@
  *
  * Consolidates what a student needs in one place. Every section below is
  * backed by a real API call — fees, library, hostel and graduation
- * clearance included, now that those modules exist.
+ * clearance included, now that those modules exist. The student's own
+ * identity (name, photo, programme) is the portal layout's header, not
+ * this page's — see `layout.tsx`.
  */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CountUp } from "@/components/CountUp";
 import { Stamp } from "@/components/Stamp";
 import {
   BedIcon,
@@ -23,19 +26,13 @@ import {
   UserPlusIcon,
 } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
 
-interface Student {
-  id: number;
-  student_id: string;
-  full_name: string;
-  programme_code: string;
-  programme_name: string;
-  current_level: number;
-  status: string;
-}
+import { useStudent } from "./student-context";
 
 const QUICK_LINKS = [
+  { href: "/my/timetable", label: "My timetable", icon: CalendarIcon, description: "Weekly classes and the exam schedule." },
+  { href: "/my/attendance", label: "My attendance", icon: ClockIcon, description: "Session attendance and exam eligibility." },
+  { href: "/my/results", label: "Results & appeals", icon: LayersIcon, description: "Published grades, GPA and grade appeals." },
   { href: "/my/finance", label: "Fees & payments", icon: CreditCardIcon, description: "Invoices, receipts and your balance." },
   { href: "/library", label: "Library", icon: BookOpenIcon, description: "The catalogue and your loans." },
   { href: "/hostel", label: "Hostel", icon: BedIcon, description: "Your room allocation." },
@@ -43,8 +40,7 @@ const QUICK_LINKS = [
 ];
 
 export default function StudentPortalPage() {
-  const { user } = useAuth();
-  const [student, setStudent] = useState<Student | null>(null);
+  const { student } = useStudent();
   const [semester, setSemester] = useState<{ id: number; name: string } | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [registeredCount, setRegisteredCount] = useState<number | null>(null);
@@ -56,20 +52,21 @@ export default function StudentPortalPage() {
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
+    if (!student) return;
+    const currentStudent = student;
     let cancelled = false;
 
     async function load() {
       try {
-        const [me, calendar] = await Promise.all([api.myStudent(), api.calendar()]);
+        const calendar = await api.calendar();
         if (cancelled) return;
-        setStudent(me);
         setSemester(calendar.semester);
         setRegistrationOpen(calendar.registration_open);
 
-        if (me && calendar.semester) {
+        if (calendar.semester) {
           const [registrations, result] = await Promise.all([
             api.myRegistrations(calendar.semester.id).catch(() => null),
-            api.studentResult(me.id, calendar.semester.id).catch(() => null),
+            api.studentResult(currentStudent.id, calendar.semester.id).catch(() => null),
           ]);
           if (cancelled) return;
           if (registrations) {
@@ -82,8 +79,8 @@ export default function StudentPortalPage() {
             setGpa(result.gpa);
           }
           const [feeBalance, clearance] = await Promise.all([
-            api.myFeeBalance(me.id).catch(() => null),
-            api.myClearance(me.id).catch(() => null),
+            api.myFeeBalance(currentStudent.id).catch(() => null),
+            api.myClearance(currentStudent.id).catch(() => null),
           ]);
           if (cancelled) return;
           if (feeBalance) setBalance(feeBalance.balance);
@@ -100,16 +97,14 @@ export default function StudentPortalPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [student]);
 
   return (
     <>
       <div className="page-header">
         <div>
           <h1>My portal</h1>
-          <p className="page-subtitle">
-            {student ? `${student.programme_name} · Year ${student.current_level}` : "Loading…"}
-          </p>
+          <p className="page-subtitle">{semester ? semester.name : "Your standing at a glance"}</p>
         </div>
       </div>
 
@@ -120,19 +115,6 @@ export default function StudentPortalPage() {
       ) : null}
 
       <div className="grid">
-        <div className="card stat stat--accent-blue">
-          <div className="stat__top">
-            <span className="stat__label">Student number</span>
-            <span className="stat__icon">
-              <LayersIcon size={18} />
-            </span>
-          </div>
-          <div className="stat__value" style={{ fontSize: "1.375rem" }}>
-            {student?.student_id ?? "—"}
-          </div>
-          <div className="stat__foot">{user?.full_name}</div>
-        </div>
-
         <div className="card stat stat--accent-teal">
           <div className="stat__top">
             <span className="stat__label">Registered this semester</span>
@@ -140,7 +122,9 @@ export default function StudentPortalPage() {
               <UserPlusIcon size={18} />
             </span>
           </div>
-          <div className="stat__value">{loaded ? registeredCount ?? "—" : "…"}</div>
+          <div className="stat__value">
+            {loaded ? (registeredCount !== null ? <CountUp value={registeredCount} duration={500} /> : "—") : "…"}
+          </div>
           <div className="stat__foot">
             <Link href="/my/courses">Manage registration →</Link>
           </div>
@@ -162,10 +146,44 @@ export default function StudentPortalPage() {
               : <Link href="/my/results">View results →</Link>}
           </div>
         </div>
+
+        {loaded && balance !== null ? (
+          <div className={`card stat stat--accent-${Number(balance) > 0 ? "red" : "teal"}`}>
+            <div className="stat__top">
+              <span className="stat__label">Fee balance</span>
+              <span className="stat__icon">
+                <CreditCardIcon size={18} />
+              </span>
+            </div>
+            <div className="stat__value">
+              {Number(balance) > 0 ? <CountUp value={Number(balance)} /> : "0"}
+            </div>
+            <div className="stat__foot">
+              <Link href="/my/finance">View invoices →</Link>
+            </div>
+          </div>
+        ) : null}
+
+        {loaded && clear !== null ? (
+          <div className={`card stat stat--accent-${clear ? "teal" : "orange"}`}>
+            <div className="stat__top">
+              <span className="stat__label">Graduation clearance</span>
+              <span className="stat__icon">
+                <FileTextIcon size={18} />
+              </span>
+            </div>
+            <div className="stat__value" style={{ fontSize: "1.25rem" }}>
+              {clear ? "Clear" : "Holds outstanding"}
+            </div>
+            <div className="stat__foot">
+              <Link href="/documents">View documents →</Link>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {semester ? (
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
           <Stamp
             status={registrationOpen ? "verified" : "hold"}
             label={registrationOpen ? "Open" : "Closed"}
@@ -180,81 +198,21 @@ export default function StudentPortalPage() {
         </div>
       ) : null}
 
-      <div className="card">
-        <div className="card__header">
-          <span className="card__icon">
-            <CalendarIcon size={18} />
-          </span>
-          <h2>Quick links</h2>
-        </div>
-        <div className="grid">
-          <Link href="/my/timetable" className="button secondary block">
-            My timetable
-          </Link>
-          <Link href="/my/attendance" className="button secondary block">
-            My attendance
-          </Link>
-          <Link href="/my/results" className="button secondary block">
-            Results &amp; grade appeals
-          </Link>
-        </div>
+      <div className="dashboard-section">
+        <h2>Quick links</h2>
       </div>
-
-      {loaded && (balance !== null || clear !== null) ? (
-        <div className="grid">
-          {balance !== null ? (
-            <div className={`card stat stat--accent-${Number(balance) > 0 ? "rose" : "teal"}`}>
-              <div className="stat__top">
-                <span className="stat__label">Fee balance</span>
-                <span className="stat__icon">
-                  <CreditCardIcon size={18} />
-                </span>
-              </div>
-              <div className="stat__value">{Number(balance) > 0 ? Number(balance).toLocaleString() : "0"}</div>
-              <div className="stat__foot">
-                <Link href="/my/finance">View invoices →</Link>
-              </div>
-            </div>
-          ) : null}
-          {clear !== null ? (
-            <div className={`card stat stat--accent-${clear ? "teal" : "amber"}`}>
-              <div className="stat__top">
-                <span className="stat__label">Graduation clearance</span>
-                <span className="stat__icon">
-                  <FileTextIcon size={18} />
-                </span>
-              </div>
-              <div className="stat__value" style={{ fontSize: "1.25rem" }}>
-                {clear ? "Clear" : "Holds outstanding"}
-              </div>
-              <div className="stat__foot">
-                <Link href="/documents">View documents →</Link>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="card">
-        <div className="card__header">
-          <span className="card__icon">
-            <CreditCardIcon size={18} />
-          </span>
-          <h2>More of your portal</h2>
-        </div>
-        <div className="grid grid--compact">
-          {QUICK_LINKS.map(({ href, label, icon: Icon, description }) => (
-            <Link key={href} href={href} className="card card--interactive quick-link" style={{ margin: 0 }}>
-              <span className="quick-link__icon">
-                <Icon size={18} />
-              </span>
-              <span className="quick-link__body">
-                <span className="quick-link__title">{label}</span>
-                <span className="quick-link__desc">{description}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
+      <div className="grid grid--compact">
+        {QUICK_LINKS.map(({ href, label, icon: Icon, description }) => (
+          <Link key={href} href={href} className="card card--interactive quick-link" style={{ margin: 0 }}>
+            <span className="quick-link__icon">
+              <Icon size={18} />
+            </span>
+            <span className="quick-link__body">
+              <span className="quick-link__title">{label}</span>
+              <span className="quick-link__desc">{description}</span>
+            </span>
+          </Link>
+        ))}
       </div>
     </>
   );

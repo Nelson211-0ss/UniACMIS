@@ -5,12 +5,17 @@
  * form to appeal one. A result stays hidden until Senate approves it and
  * the examinations office publishes it, and is shown as withheld (never as
  * the marks themselves) while an outstanding hold blocks it — both
- * decisions the server makes; this page only reflects them. */
+ * decisions the server makes; this page only reflects them.
+ *
+ * The student's own identity (name, photo, programme) is the portal
+ * layout's header, not this page's — see `../layout.tsx`. */
 
 import { useEffect, useState } from "react";
 
 import { AlertCircleIcon, CheckCircleIcon, LayersIcon } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
+
+import { useStudent } from "../student-context";
 
 interface CourseResult {
   registration_id: number;
@@ -33,24 +38,8 @@ interface Appeal {
   created_at: string;
 }
 
-interface StudentIdentity {
-  full_name: string;
-  student_id: string;
-  programme_name: string;
-  current_level: number;
-  photo: string | null;
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 export default function ResultsPage() {
-  const [student, setStudent] = useState<StudentIdentity | null>(null);
-  const [photoFailed, setPhotoFailed] = useState(false);
+  const { student, loaded: studentLoaded } = useStudent();
   const [semesterName, setSemesterName] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
   const [withheld, setWithheld] = useState(false);
@@ -69,20 +58,18 @@ export default function ResultsPage() {
 
   async function load() {
     try {
-      const [me, calendar, myAppeals] = await Promise.all([
-        api.myStudent(),
+      const [calendar, myAppeals] = await Promise.all([
         api.calendar(),
         api.myAppeals().catch(() => ({ results: [] as Appeal[] })),
       ]);
       setAppeals(myAppeals.results);
-      if (me) setStudent(me);
-      if (!me || !calendar.semester) {
+      if (!student || !calendar.semester) {
         setState("ready");
         return;
       }
       setSemesterName(calendar.semester.name);
       const [result, registrations] = await Promise.all([
-        api.studentResult(me.id, calendar.semester.id),
+        api.studentResult(student.id, calendar.semester.id),
         // The result payload only carries a bare registration id — this
         // semester's registrations (which do carry the course's name)
         // fill that in below rather than showing "Registration #7".
@@ -105,8 +92,10 @@ export default function ResultsPage() {
   }
 
   useEffect(() => {
+    if (!studentLoaded) return;
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentLoaded, student]);
 
   async function submitAppeal(registrationId: number) {
     if (!appealReason.trim()) return;
@@ -136,30 +125,6 @@ export default function ResultsPage() {
           <p className="page-subtitle">{semesterName ?? "Results"}</p>
         </div>
       </div>
-
-      {student ? (
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-          {student.photo && !photoFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={student.photo}
-              alt=""
-              className="avatar avatar--lg avatar--square"
-              onError={() => setPhotoFailed(true)}
-            />
-          ) : (
-            <span className="avatar avatar--lg avatar--square" aria-hidden="true">
-              {initials(student.full_name)}
-            </span>
-          )}
-          <div style={{ minWidth: 0 }}>
-            <h2>{student.full_name}</h2>
-            <p className="muted" style={{ margin: "4px 0 0" }}>
-              {student.student_id} &middot; {student.programme_name} &middot; Year {student.current_level}
-            </p>
-          </div>
-        </div>
-      ) : null}
 
       {notice ? (
         <div className={`alert alert--${notice.kind === "success" ? "success" : "error"}`}>
