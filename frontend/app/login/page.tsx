@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { HeroSlider } from "@/components/HeroSlider";
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -65,6 +66,7 @@ export default function LoginPage() {
   return (
     <main className="login">
       <section className="login__hero" aria-hidden="true">
+        <HeroSlider />
         <div className="login__hero-brand">
           <span className="login__hero-mark">
             <GraduationCapIcon size={22} />

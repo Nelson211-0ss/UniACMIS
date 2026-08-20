@@ -1041,33 +1041,39 @@ button:disabled {
 /* `primary` and the bare button share the same navy fill — kept as two
    classes because callers already say which one they mean, not because
    they render differently. */
-button.primary {
+button.primary,
+.button.primary {
   background: var(--ink);
   color: var(--on-ink);
 }
 
-button.primary:hover:not(:disabled) {
+button.primary:hover:not(:disabled),
+.button.primary:hover {
   background: var(--ink-strong);
 }
 
-button.secondary {
+button.secondary,
+.button.secondary {
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--border);
 }
 
-button.secondary:hover:not(:disabled) {
+button.secondary:hover:not(:disabled),
+.button.secondary:hover {
   background: var(--surface-muted);
   border-color: var(--border-strong);
 }
 
-button.ghost {
+button.ghost,
+.button.ghost {
   background: transparent;
   color: var(--muted);
   padding: 8px 12px;
 }
 
-button.ghost:hover:not(:disabled) {
+button.ghost:hover:not(:disabled),
+.button.ghost:hover {
   background: var(--surface-sunken);
   color: var(--text);
 }
@@ -1606,6 +1612,66 @@ tbody tr:last-child td {
     var(--brand-hero-start);
   color: #ffffff;
   overflow: hidden;
+}
+
+/* The campus photo backdrop sits behind everything else in the hero — the
+   brand mark, copy and feature list already carry `position: relative;
+   z-index: 1` to float above it. */
+.hero-slider {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-slider__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+
+/* A navy tint over the photos, not plain black, so the backdrop still
+   reads as this institution's colour rather than a generic dark overlay —
+   and dense enough at the edges that white text stays legible over any
+   photo without needing per-image adjustment. */
+.hero-slider::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    165deg,
+    rgba(27, 42, 74, 0.82) 0%,
+    rgba(27, 42, 74, 0.68) 45%,
+    rgba(27, 42, 74, 0.88) 100%
+  );
+}
+
+/* Sits just above `.login__hero-foot`, not flush with the hero's bottom
+   edge, so the dots and that footer line never overlap. */
+.hero-slider__dots {
+  position: absolute;
+  left: var(--sp-10);
+  bottom: calc(var(--sp-10) + 32px);
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+}
+
+.hero-slider__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  transition: width var(--normal) var(--ease), background var(--normal) var(--ease);
+}
+
+.hero-slider__dot.is-active {
+  width: 18px;
+  background: #ffffff;
 }
 
 .login__hero-brand {
