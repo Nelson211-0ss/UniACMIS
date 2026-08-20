@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { DonutChartCard } from "@/components/charts/DonutChartCard";
 import { LineChartCard } from "@/components/charts/LineChartCard";
+import { CountUp } from "@/components/CountUp";
 import { Stamp } from "@/components/Stamp";
 import { StatTile, StatTileSkeleton } from "@/components/StatTile";
 import {
@@ -320,7 +321,7 @@ export default function DashboardPage() {
           ) : (
             <StatTile
               label="Students on the register"
-              value={studentCount ?? "—"}
+              value={studentCount !== null ? <CountUp value={studentCount} /> : "—"}
               icon={<UsersIcon size={18} />}
               accent="blue"
             />
@@ -330,16 +331,16 @@ export default function DashboardPage() {
         {revenue ? (
           <StatTile
             label="Outstanding revenue"
-            value={Number(revenue.outstanding).toLocaleString()}
-            icon={<CalendarIcon size={18} />}
-            accent="rose"
+            value={<CountUp value={Number(revenue.outstanding)} />}
+            icon={<CreditCardIcon size={18} />}
+            accent="red"
             foot={`Net billed ${Number(revenue.net_billed).toLocaleString()}`}
           />
         ) : null}
 
         <StatTile
           label="Offline queue on this device"
-          value={queued}
+          value={<CountUp value={queued} duration={500} />}
           icon={<InboxIcon size={18} />}
           accent="amber"
           foot={
@@ -416,7 +417,7 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div className="stat__value">
-                {financeBalance !== null ? financeBalance.toLocaleString() : "—"}
+                {financeBalance !== null ? <CountUp value={financeBalance} /> : "—"}
               </div>
             </div>
             <LineChartCard
@@ -448,9 +449,11 @@ export default function DashboardPage() {
                     <BookOpenIcon size={18} />
                   </span>
                 </div>
-                <div className="stat__value">{libraryStats?.activeLoans ?? "—"}</div>
+                <div className="stat__value">
+                  {libraryStats ? <CountUp value={libraryStats.activeLoans} /> : "—"}
+                </div>
               </div>
-              <div className="card stat stat--accent-rose">
+              <div className="card stat stat--accent-red">
                 <div className="stat__top">
                   <span className="stat__label">Fines outstanding</span>
                   <span className="stat__icon">
@@ -458,7 +461,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <div className="stat__value">
-                  {libraryStats ? (libraryStats.finesOwed > 0 ? libraryStats.finesOwed.toLocaleString() : "0") : "—"}
+                  {libraryStats ? <CountUp value={libraryStats.finesOwed} /> : "—"}
                 </div>
               </div>
             </div>
@@ -476,14 +479,16 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="grid">
-            <div className="card stat stat--accent-purple">
+            <div className="card stat stat--accent-orange">
               <div className="stat__top">
                 <span className="stat__label">Leave requests awaiting action</span>
                 <span className="stat__icon">
                   <BriefcaseIcon size={18} />
                 </span>
               </div>
-              <div className="stat__value">{leaveStats?.pending ?? "—"}</div>
+              <div className="stat__value">
+                {leaveStats ? <CountUp value={leaveStats.pending} duration={500} /> : "—"}
+              </div>
             </div>
             <div className="card stat stat--accent-teal">
               <div className="stat__top">
@@ -492,7 +497,9 @@ export default function DashboardPage() {
                   <BriefcaseIcon size={18} />
                 </span>
               </div>
-              <div className="stat__value">{leaveStats?.total ?? "—"}</div>
+              <div className="stat__value">
+                {leaveStats ? <CountUp value={leaveStats.total} duration={500} /> : "—"}
+              </div>
             </div>
           </div>
         </>
@@ -515,7 +522,9 @@ export default function DashboardPage() {
                     <BedIcon size={18} />
                   </span>
                 </div>
-                <div className="stat__value">{hostelStats?.rooms ?? "—"}</div>
+                <div className="stat__value">
+                  {hostelStats ? <CountUp value={hostelStats.rooms} duration={500} /> : "—"}
+                </div>
               </div>
               <div className="card stat stat--accent-teal">
                 <div className="stat__top">
@@ -524,7 +533,9 @@ export default function DashboardPage() {
                     <BedIcon size={18} />
                   </span>
                 </div>
-                <div className="stat__value">{hostelStats?.available ?? "—"}</div>
+                <div className="stat__value">
+                  {hostelStats ? <CountUp value={hostelStats.available} duration={500} /> : "—"}
+                </div>
               </div>
             </div>
             <DonutChartCard

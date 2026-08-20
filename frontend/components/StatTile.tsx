@@ -4,7 +4,7 @@ interface StatTileProps {
   label: string;
   value: ReactNode;
   icon: ReactNode;
-  accent: "blue" | "teal" | "amber" | "purple" | "rose";
+  accent: "blue" | "teal" | "amber" | "purple" | "rose" | "red" | "orange";
   foot?: ReactNode;
 }
 

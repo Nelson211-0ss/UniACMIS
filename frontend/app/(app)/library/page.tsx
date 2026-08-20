@@ -205,7 +205,7 @@ export default function LibraryPage() {
               </div>
               <div className="stat__value">{activeLoans}</div>
             </div>
-            <div className="card stat stat--accent-rose">
+            <div className="card stat stat--accent-red">
               <div className="stat__top">
                 <span className="stat__label">Fines outstanding</span>
                 <span className="stat__icon">

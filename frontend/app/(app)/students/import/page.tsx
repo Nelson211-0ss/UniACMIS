@@ -138,7 +138,7 @@ export default function BulkImportStudentsPage() {
               <span className="stat__label">Students created</span>
               <div className="stat__value">{result.created}</div>
             </div>
-            <div className={`card stat stat--accent-${result.errors.length > 0 ? "rose" : "teal"}`}>
+            <div className={`card stat stat--accent-${result.errors.length > 0 ? "red" : "teal"}`}>
               <span className="stat__label">Rows rejected</span>
               <div className="stat__value">{result.errors.length}</div>
             </div>

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { DonutChartCard } from "@/components/charts/DonutChartCard";
 import { LineChartCard } from "@/components/charts/LineChartCard";
+import { CountUp } from "@/components/CountUp";
 import { BarChartIcon, DownloadIcon } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
 import { CHART_STATUS } from "@/lib/chartColors";
@@ -172,7 +173,9 @@ export default function ReportingPage() {
                 <BarChartIcon size={18} />
               </span>
             </div>
-            <div className="stat__value">{ratios.students}</div>
+            <div className="stat__value">
+              <CountUp value={ratios.students} />
+            </div>
           </div>
           <div className="card stat stat--accent-teal">
             <div className="stat__top">
@@ -181,7 +184,9 @@ export default function ReportingPage() {
                 <BarChartIcon size={18} />
               </span>
             </div>
-            <div className="stat__value">{ratios.staff}</div>
+            <div className="stat__value">
+              <CountUp value={ratios.staff} />
+            </div>
           </div>
           <div className="card stat stat--accent-purple">
             <div className="stat__top">
@@ -190,17 +195,25 @@ export default function ReportingPage() {
                 <BarChartIcon size={18} />
               </span>
             </div>
-            <div className="stat__value">{ratios.students_per_staff?.toFixed(1) ?? "—"}</div>
+            <div className="stat__value">
+              {ratios.students_per_staff !== null ? (
+                <CountUp value={ratios.students_per_staff} decimals={1} />
+              ) : (
+                "—"
+              )}
+            </div>
           </div>
           {revenue ? (
-            <div className="card stat stat--accent-rose">
+            <div className="card stat stat--accent-red">
               <div className="stat__top">
                 <span className="stat__label">Outstanding revenue</span>
                 <span className="stat__icon">
                   <BarChartIcon size={18} />
                 </span>
               </div>
-              <div className="stat__value">{Number(revenue.outstanding).toLocaleString()}</div>
+              <div className="stat__value">
+                <CountUp value={Number(revenue.outstanding)} />
+              </div>
             </div>
           ) : null}
         </div>
