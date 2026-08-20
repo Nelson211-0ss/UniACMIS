@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   AlertCircleIcon,
   SearchIcon,
+  UploadIcon,
   UserPlusIcon,
   UsersIcon,
   WifiOffIcon,
@@ -90,10 +91,16 @@ export default function StudentsPage() {
           </p>
         </div>
         {can("registry.add_student") ? (
-          <Link href="/students/new" className="button">
-            <UserPlusIcon size={18} />
-            Admit a student
-          </Link>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <Link href="/students/import" className="button secondary">
+              <UploadIcon size={18} />
+              Bulk import
+            </Link>
+            <Link href="/students/new" className="button">
+              <UserPlusIcon size={18} />
+              Admit a student
+            </Link>
+          </div>
         ) : null}
       </div>
 

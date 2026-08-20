@@ -205,6 +205,29 @@ class SponsorSerializer(serializers.ModelSerializer):
         ]
 
 
+class BulkImportRequestSerializer(serializers.Serializer):
+    file = serializers.FileField(
+        help_text="CSV — see the import_students management command's docstring for columns."
+    )
+    commit = serializers.BooleanField(
+        default=False,
+        help_text="False (default) validates and reports without writing anything.",
+    )
+    reason = serializers.CharField(required=False, allow_blank=True, default="Bulk legacy import")
+
+
+class BulkImportRowErrorSerializer(serializers.Serializer):
+    row = serializers.IntegerField()
+    errors = serializers.DictField(child=serializers.CharField())
+
+
+class BulkImportResultSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    valid = serializers.IntegerField()
+    created = serializers.IntegerField()
+    errors = BulkImportRowErrorSerializer(many=True)
+
+
 class StaffProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)

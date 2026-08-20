@@ -237,6 +237,32 @@ export const api = {
     }>(`/registry/students/${params}`);
   },
 
+  async bulkImportStudents(file: File, commit: boolean, reason?: string) {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("commit", String(commit));
+    if (reason) body.append("reason", reason);
+
+    // A multipart upload, not JSON — `request()` always JSON-encodes its body,
+    // so this goes straight through fetch the same way `downloadReport` does,
+    // letting the browser set the multipart Content-Type (with its boundary)
+    // itself rather than us guessing it.
+    const response = await fetch(`${BASE_URL}/registry/students/bulk-import/`, {
+      method: "POST",
+      headers: tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {},
+      body,
+    });
+    if (!response.ok) {
+      throw new ApiFailure(response.status, await parseError(response));
+    }
+    return (await response.json()) as {
+      total: number;
+      valid: number;
+      created: number;
+      errors: Array<{ row: number; errors: Record<string, string> }>;
+    };
+  },
+
   // ------------------------------------------------------- student portal
 
   /** The signed-in student's own registry record — scoped to self by the

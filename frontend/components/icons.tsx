@@ -408,3 +408,13 @@ export function DownloadIcon({ size = 18, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function UploadIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M12 15V3" />
+      <path d="M7.5 7.5 12 3l4.5 4.5" />
+      <path d="M4 19h16" />
+    </svg>
+  );
+}

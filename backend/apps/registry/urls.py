@@ -1,7 +1,12 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from apps.registry.views import SponsorViewSet, StaffProfileViewSet, StudentViewSet
+from apps.registry.views import (
+    BulkImportStudentsView,
+    SponsorViewSet,
+    StaffProfileViewSet,
+    StudentViewSet,
+)
 
 app_name = "registry"
 
@@ -10,4 +15,7 @@ router.register("students", StudentViewSet, basename="student")
 router.register("sponsors", SponsorViewSet, basename="sponsor")
 router.register("staff", StaffProfileViewSet, basename="staff")
 
-urlpatterns = [path("", include(router.urls))]
+urlpatterns = [
+    path("students/bulk-import/", BulkImportStudentsView.as_view(), name="student-bulk-import"),
+    path("", include(router.urls)),
+]

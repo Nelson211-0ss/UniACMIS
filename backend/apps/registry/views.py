@@ -1,18 +1,25 @@
 from __future__ import annotations
 
+import csv
+import io
+
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accounts.mixins import ScopedQuerysetMixin
+from apps.core.exceptions import DomainError
 from apps.core.mixins import CreateWithResponseSerializerMixin
 from apps.core.permissions import HasModulePermission
 from apps.registry import services
 from apps.registry.models import Sponsor, StaffProfile, Student, StudentStatusHistory
 from apps.registry.serializers import (
+    BulkImportRequestSerializer,
+    BulkImportResultSerializer,
     SponsorSerializer,
     StaffProfileSerializer,
     StatusChangeSerializer,
@@ -184,6 +191,47 @@ class StudentViewSet(ScopedQuerysetMixin, CreateWithResponseSerializerMixin, vie
                 "clear": not any(h["blocking"] for h in holds),
             }
         )
+
+
+class BulkImportStudentsView(APIView):
+    """NFR-DATA-03: bulk-import legacy student records from an uploaded CSV.
+
+    Same all-or-nothing contract as the `import_students` management command
+    it wraps — a dry run (`commit=false`, the default) validates every row
+    and reports what would happen without writing anything, so a registrar
+    can fix a spreadsheet before it touches the database. Reachable from the
+    browser rather than only from a terminal on the server.
+    """
+
+    permission_classes = [HasModulePermission]
+    required_permission = "registry.add_student"
+
+    @extend_schema(
+        summary="Bulk-import students from a CSV file",
+        request=BulkImportRequestSerializer,
+        responses={200: BulkImportResultSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = BulkImportRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        upload = serializer.validated_data["file"]
+        try:
+            decoded = upload.read().decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise DomainError("The file is not valid UTF-8 text.", code="bad_encoding") from exc
+
+        rows = list(csv.DictReader(io.StringIO(decoded)))
+        if not rows:
+            raise DomainError("The file has no data rows.", code="empty_file")
+
+        result = services.import_students(
+            rows,
+            commit=serializer.validated_data["commit"],
+            actor=request.user,
+            reason=serializer.validated_data["reason"],
+        )
+        return Response(BulkImportResultSerializer(result).data)
 
 
 class SponsorViewSet(viewsets.ModelViewSet):
