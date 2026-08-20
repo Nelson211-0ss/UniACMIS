@@ -679,9 +679,13 @@ h2 {
 }
 
 /* Two-thirds/one-third split for a chart beside its supporting numbers —
-   collapses to a single column before the chart gets too cramped to read. */
+   collapses to a single column before the chart gets too cramped to read.
+   `align-items: start` so a short stat card never stretches into a tall
+   card with dead space at the bottom just because its neighbour is taller —
+   each side sizes to its own content. */
 .grid--split {
   display: grid;
+  align-items: start;
   gap: var(--gap);
   grid-template-columns: 2fr 1fr;
 }
