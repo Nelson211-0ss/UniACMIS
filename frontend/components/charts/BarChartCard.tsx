@@ -11,7 +11,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { CHART_GRID, CHART_SERIES, CHART_TICK, compactNumber } from "@/lib/chartColors";
+import { compactNumber, useChartPalette } from "@/lib/chartColors";
+import { useTheme } from "@/lib/theme";
 
 export interface BarSeries {
   key: string;
@@ -41,6 +42,10 @@ export function BarChartCard({
   height = 260,
   stacked = false,
 }: BarChartCardProps) {
+  const { series: seriesColors, grid, tick } = useChartPalette();
+  const { theme } = useTheme();
+  const cursorFill = theme === "dark" ? "#1a1a1a" : "#eef1f5";
+
   return (
     <div className="card chart-card">
       <div className="chart-card__header">
@@ -54,15 +59,15 @@ export function BarChartCard({
       ) : (
         <ResponsiveContainer width="100%" height={height}>
           <BarChart data={data} margin={{ top: 4, right: 8, left: -4, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke={CHART_GRID} />
+            <CartesianGrid vertical={false} stroke={grid} />
             <XAxis
               dataKey={xKey}
-              tick={{ fill: CHART_TICK, fontSize: 12 }}
-              axisLine={{ stroke: CHART_GRID }}
+              tick={{ fill: tick, fontSize: 12 }}
+              axisLine={{ stroke: grid }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: CHART_TICK, fontSize: 12 }}
+              tick={{ fill: tick, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               width={52}
@@ -71,12 +76,15 @@ export function BarChartCard({
             />
             <Tooltip
               contentStyle={{
+                background: "var(--surface)",
                 borderRadius: 8,
                 border: "1px solid var(--border)",
                 fontSize: 13,
                 boxShadow: "var(--shadow-md)",
               }}
-              cursor={{ fill: "#eef1f5" }}
+              itemStyle={{ color: "var(--text)" }}
+              labelStyle={{ color: "var(--text)" }}
+              cursor={{ fill: cursorFill }}
             />
             {series.length > 1 ? <Legend wrapperStyle={{ fontSize: 12 }} /> : null}
             {series.map((s, index) => (
@@ -84,7 +92,7 @@ export function BarChartCard({
                 key={s.key}
                 dataKey={s.key}
                 name={s.label}
-                fill={s.color ?? CHART_SERIES[index % CHART_SERIES.length]}
+                fill={s.color ?? seriesColors[index % seriesColors.length]}
                 radius={stacked ? [0, 0, 0, 0] : [4, 4, 0, 0]}
                 stackId={stacked ? "stack" : undefined}
                 maxBarSize={48}

@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { CHART_GRID, CHART_SERIES, CHART_TICK, compactNumber } from "@/lib/chartColors";
+import { compactNumber, useChartPalette } from "@/lib/chartColors";
 
 export interface LineSeries {
   key: string;
@@ -43,6 +43,7 @@ export function LineChartCard({
   unit,
 }: LineChartCardProps) {
   const hasValues = data.some((row) => series.some((s) => row[s.key] !== null && row[s.key] !== undefined));
+  const { series: seriesColors, grid, tick } = useChartPalette();
 
   return (
     <div className="card chart-card">
@@ -57,15 +58,15 @@ export function LineChartCard({
       ) : (
         <ResponsiveContainer width="100%" height={height}>
           <LineChart data={data} margin={{ top: 4, right: 8, left: -4, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke={CHART_GRID} />
+            <CartesianGrid vertical={false} stroke={grid} />
             <XAxis
               dataKey={xKey}
-              tick={{ fill: CHART_TICK, fontSize: 12 }}
-              axisLine={{ stroke: CHART_GRID }}
+              tick={{ fill: tick, fontSize: 12 }}
+              axisLine={{ stroke: grid }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: CHART_TICK, fontSize: 12 }}
+              tick={{ fill: tick, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               width={52}
@@ -73,15 +74,18 @@ export function LineChartCard({
             />
             <Tooltip
               contentStyle={{
+                background: "var(--surface)",
                 borderRadius: 8,
                 border: "1px solid var(--border)",
                 fontSize: 13,
                 boxShadow: "var(--shadow-md)",
               }}
+              itemStyle={{ color: "var(--text)" }}
+              labelStyle={{ color: "var(--text)" }}
             />
             {series.length > 1 ? <Legend wrapperStyle={{ fontSize: 12 }} /> : null}
             {series.map((s, index) => {
-              const color = s.color ?? CHART_SERIES[index % CHART_SERIES.length];
+              const color = s.color ?? seriesColors[index % seriesColors.length];
               return (
                 <Line
                   key={s.key}

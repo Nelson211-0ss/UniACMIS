@@ -7,10 +7,14 @@
  *
  * Kept as custom properties so the whole shell re-themes from one block, and
  * so a university with its own colours changes these values rather than the
- * components. Deliberately one theme, not a light/dark pair: the reference
- * design is a single, consistent institutional look — a registrar reading a
- * balance off the screen needs stable contrast, not a theme that changes
- * with the device's OS setting or the time of day.
+ * components. A dark variant lives under `[data-theme="dark"]` below —
+ * switched only by the floating toggle (`components/ThemeToggle.tsx`) or,
+ * for a first-ever visit with nothing stored yet, the OS preference read
+ * once at load. Either way the choice then persists in `localStorage`: a
+ * registrar's screen does not relabel itself partway through reading a
+ * balance because the room got dark, which was the whole point of the
+ * one-theme rule this replaced — that stability now comes from the pick
+ * being explicit and sticky, not from there being only one option.
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
@@ -101,6 +105,10 @@
   --stat-purple-container: #efe6f3;
   --stat-rose: #a13f63;
   --stat-rose-container: #f6e7ee;
+  --stat-red: #c0392b;
+  --stat-red-container: #fbe3df;
+  --stat-orange: #d2650f;
+  --stat-orange-container: #fce7d3;
 
   /* Chart series — a fixed categorical order, drawn from the same
      institutional family as everything else rather than a generic palette,
@@ -151,9 +159,106 @@
   /* Fixed brand fill for the login hero panel, which stays the university's
      navy regardless of anything else on the page — never swapped, so a
      themeable future doesn't have to special-case it the way `--primary`
-     would need to if it also drove text-on-dark. */
-  --brand-hero-start: var(--ink);
-  --brand-hero-end: var(--ink-strong);
+     would need to if it also drove text-on-dark. Literal hex rather than
+     `var(--ink)`, on purpose: `--ink` itself now has a dark-mode value (a
+     lighter blue, so it stays legible as text there), and this panel is
+     exactly the thing that must NOT follow it. */
+  --brand-hero-start: #1b2a4a;
+  --brand-hero-end: #12203a;
+}
+
+/* ---------------------------------------------------------------- dark theme
+ *
+ * `--ink` and `--seal` each carry two jobs in the light palette above: solid
+ * fills (a button, the avatar circle) and emphasised text (headings, links,
+ * stat values) on `--surface`. No single lightness satisfies both against a
+ * dark background — text needs to be light enough to read, a fill needs to
+ * stay dark enough for white button-text to read on top of it, and those
+ * two constraints land on opposite sides of the same scale. Rather than
+ * introduce a second token and touch every one of the ~20 call sites to
+ * pick the right one, `--ink`/`--seal` are tuned here as the text-legible
+ * compromise (they are text far more often than they are a fill), and the
+ * handful of solid-fill spots (`button`, `.avatar`, `.splash__brand`) get
+ * their own small override further down instead.
+ */
+[data-theme="dark"] {
+  /* True neutral black/gray, not a navy tint — `--ink`/`--seal` stay
+     colour accents on top of it, the same way a "lights out" theme keeps
+     its brand blue against pure black rather than diluting it too. */
+  --bg: #000000;
+  --surface: #121212;
+  --surface-muted: #0a0a0a;
+  --surface-sunken: #000000;
+  --surface-sunken-strong: #000000;
+  --text: #ededed;
+  --muted: #9a9a9a;
+  --muted-strong: #c4c4c4;
+  --border: #272727;
+  --border-strong: #3f3f3f;
+
+  --ink: #5d7ec4;
+  --ink-strong: #7195d6;
+  --ink-soft: #26365a;
+  --on-ink: #ffffff;
+
+  --seal: #caa053;
+  --seal-strong: #e0b568;
+  --on-seal: #241b06;
+  --seal-container: #3a2c12;
+  --on-seal-container: #f0d9a8;
+
+  --status-verified: #4caf72;
+  --status-verified-bg: #12291c;
+  --status-hold: #e2685a;
+  --status-hold-bg: #331815;
+  --status-pending: #d4ac4e;
+  --status-pending-bg: #332710;
+  --status-neutral: #9aa5b8;
+  --status-neutral-bg: #1b2130;
+
+  /* Hardcoded in the light palette rather than derived — so not picked up
+     automatically by the base-token overrides above. */
+  --surface-container-highest: #1e1e1e;
+  --on-primary-container: #c7d3e8;
+
+  --stat-purple: #c39be0;
+  --stat-purple-container: #2a2138;
+  --stat-rose: #e59bbb;
+  --stat-rose-container: #34202a;
+  --stat-red: #e0574a;
+  --stat-red-container: #3a1712;
+  --stat-orange: #f0924a;
+  --stat-orange-container: #3a2210;
+
+  /* Navy-tinted shadows read as murk once the surface behind them is dark
+     already; plain black at higher opacity is what actually reads as
+     depth here. */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 1px 1px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.6), 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* The handful of solid navy fills `--ink` cannot also serve once it is
+   tuned for text (see the comment above) — a fixed, slightly darker blue
+   that still reads clearly as "a button" against the dark page background,
+   with `--on-ink` white staying legible on top of it. */
+[data-theme="dark"] button,
+[data-theme="dark"] .button,
+[data-theme="dark"] button.primary,
+[data-theme="dark"] .button.primary,
+[data-theme="dark"] .avatar,
+[data-theme="dark"] .splash__brand {
+  background: #2f4a80;
+}
+
+[data-theme="dark"] button.secondary,
+[data-theme="dark"] .button.secondary {
+  background: var(--surface);
+}
+
+[data-theme="dark"] button.ghost,
+[data-theme="dark"] .button.ghost {
+  background: transparent;
 }
 
 *,
@@ -646,8 +751,9 @@ h2 {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background: var(--secondary-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--secondary-container);
   color: var(--on-secondary-container);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
 }
 
@@ -742,10 +848,16 @@ h2 {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-sm);
-  background: var(--secondary-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--secondary-container);
   color: var(--on-secondary-container);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
-  transition: background var(--normal) var(--ease), color var(--normal) var(--ease);
+  transition: background var(--normal) var(--ease), color var(--normal) var(--ease),
+    transform var(--normal) var(--ease);
+}
+
+.quick-link:hover .quick-link__icon {
+  transform: scale(1.08) rotate(-3deg);
 }
 
 .quick-link__body {
@@ -1184,11 +1296,13 @@ button.sm {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-sm);
-  transition: transform var(--normal) var(--ease);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform var(--normal) var(--ease), box-shadow var(--normal) var(--ease);
 }
 
 .stat:hover .stat__icon {
-  transform: scale(1.1) rotate(-4deg);
+  transform: scale(1.12) rotate(-4deg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
 }
 
 .stat__value {
@@ -1206,29 +1320,42 @@ button.sm {
   margin-top: var(--sp-1);
 }
 
+/* A soft top-left gloss over each container colour, not a flat fill — the
+   inset highlight above pairs with this to read as a slightly raised,
+   glassy badge rather than a plain coloured square. */
 .stat--accent-blue .stat__icon {
-  background: var(--stat-blue-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-blue-container);
   color: var(--stat-blue);
 }
 
 .stat--accent-teal .stat__icon {
-  background: var(--stat-teal-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-teal-container);
   color: var(--stat-teal);
 }
 
 .stat--accent-amber .stat__icon {
-  background: var(--stat-amber-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-amber-container);
   color: var(--stat-amber);
 }
 
 .stat--accent-purple .stat__icon {
-  background: var(--stat-purple-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-purple-container);
   color: var(--stat-purple);
 }
 
 .stat--accent-rose .stat__icon {
-  background: var(--stat-rose-container);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-rose-container);
   color: var(--stat-rose);
+}
+
+.stat--accent-red .stat__icon {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-red-container);
+  color: var(--stat-red);
+}
+
+.stat--accent-orange .stat__icon {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 65%), var(--stat-orange-container);
+  color: var(--stat-orange);
 }
 
 /* --------------------------------------------------- connection + outbox */
@@ -1818,4 +1945,69 @@ tbody tr:last-child td {
   background: var(--ink);
   color: #ffffff;
   margin-bottom: var(--sp-4);
+}
+
+/* ----------------------------------------------------------- theme toggle */
+
+.theme-toggle {
+  position: fixed;
+  right: var(--sp-6);
+  bottom: var(--sp-6);
+  z-index: 50;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--normal) var(--ease), box-shadow var(--normal) var(--ease),
+    color var(--normal) var(--ease);
+}
+
+/* `button.theme-toggle:hover`, not just `.theme-toggle:hover` — the global
+   `button:hover:not(:disabled)` ink-strong fill a little further up ties
+   this on specificity (element + two pseudo-classes each), and a tie falls
+   back to source order. Naming the element here breaks the tie in this
+   rule's favour without needing `:not(:disabled)` too. */
+button.theme-toggle:hover {
+  background: var(--surface);
+  transform: translateY(-2px) scale(1.06);
+  color: var(--seal-strong);
+}
+
+.theme-toggle:active {
+  transform: translateY(0) scale(0.96);
+}
+
+@media (max-width: 560px) {
+  .theme-toggle {
+    right: var(--sp-4);
+    bottom: var(--sp-4);
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* More specific than the blanket `[data-theme="dark"] button` fill above,
+   on purpose — this one is meant to read as a card-toned circle with an
+   icon, not another navy button. */
+[data-theme="dark"] .theme-toggle,
+[data-theme="dark"] .theme-toggle:hover {
+  /* Beats the global `button:hover:not(:disabled)` ink-strong fill, which
+     otherwise wins on specificity (an element plus two pseudo-classes) over
+     a plain `[data-theme="dark"] .theme-toggle:hover`. */
+  background: var(--surface);
+}
+
+[data-theme="dark"] .theme-toggle {
+  color: var(--muted-strong);
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+  color: var(--seal-strong);
 }

@@ -2,7 +2,8 @@
 
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
-import { CHART_SERIES } from "@/lib/chartColors";
+import { useChartPalette } from "@/lib/chartColors";
+import { useTheme } from "@/lib/theme";
 
 export interface DonutSlice {
   key: string;
@@ -37,6 +38,9 @@ export function DonutChartCard({
 }: DonutChartCardProps) {
   const total = data.reduce((sum, slice) => sum + slice.value, 0);
   const isPie = innerRadius === 0 || innerRadius === "0" || innerRadius === "0%";
+  const { series: seriesColors } = useChartPalette();
+  const { theme } = useTheme();
+  const ringGap = theme === "dark" ? "#121212" : "#ffffff";
 
   return (
     <div className="card chart-card">
@@ -59,7 +63,7 @@ export function DonutChartCard({
                 innerRadius={innerRadius}
                 outerRadius="92%"
                 paddingAngle={data.length > 1 ? 2 : 0}
-                stroke="#ffffff"
+                stroke={ringGap}
                 strokeWidth={2}
                 animationDuration={700}
                 animationEasing="ease-out"
@@ -67,17 +71,20 @@ export function DonutChartCard({
                 {data.map((slice, index) => (
                   <Cell
                     key={slice.key}
-                    fill={slice.color ?? CHART_SERIES[index % CHART_SERIES.length]}
+                    fill={slice.color ?? seriesColors[index % seriesColors.length]}
                   />
                 ))}
               </Pie>
               <Tooltip
                 contentStyle={{
+                  background: "var(--surface)",
                   borderRadius: 8,
                   border: "1px solid var(--border)",
                   fontSize: 13,
                   boxShadow: "var(--shadow-md)",
                 }}
+                itemStyle={{ color: "var(--text)" }}
+                labelStyle={{ color: "var(--text)" }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
