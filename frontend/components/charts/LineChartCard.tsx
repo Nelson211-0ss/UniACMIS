@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,34 +13,37 @@ import {
 
 import { CHART_GRID, CHART_SERIES, CHART_TICK, compactNumber } from "@/lib/chartColors";
 
-export interface BarSeries {
+export interface LineSeries {
   key: string;
   label: string;
   color?: string;
 }
 
-interface BarChartCardProps {
+interface LineChartCardProps {
   title: string;
   subtitle?: string;
-  data: Array<Record<string, string | number>>;
+  data: Array<Record<string, string | number | null>>;
   xKey: string;
-  series: BarSeries[];
+  series: LineSeries[];
   height?: number;
-  stacked?: boolean;
+  unit?: string;
 }
 
-/** A bar chart card for a magnitude comparison across categories (enrollment
- * by programme, revenue by month) — never dual-axis, one hue per series in
- * the fixed institutional order unless the caller names its own. */
-export function BarChartCard({
+/** A trend across an ordered sequence — semesters, months — never a bare
+ * area fill (that reads as a magnitude, not a path), always with visible
+ * dots so even a two-point run reads as data rather than a rendering
+ * glitch. `connectNulls` so one missing period doesn't sever the line. */
+export function LineChartCard({
   title,
   subtitle,
   data,
   xKey,
   series,
   height = 260,
-  stacked = false,
-}: BarChartCardProps) {
+  unit,
+}: LineChartCardProps) {
+  const hasValues = data.some((row) => series.some((s) => row[s.key] !== null && row[s.key] !== undefined));
+
   return (
     <div className="card chart-card">
       <div className="chart-card__header">
@@ -49,11 +52,11 @@ export function BarChartCard({
           {subtitle ? <p className="chart-card__subtitle">{subtitle}</p> : null}
         </div>
       </div>
-      {data.length === 0 ? (
+      {data.length === 0 || !hasValues ? (
         <div className="chart-empty">No data yet.</div>
       ) : (
         <ResponsiveContainer width="100%" height={height}>
-          <BarChart data={data} margin={{ top: 4, right: 8, left: -4, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 4, right: 8, left: -4, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke={CHART_GRID} />
             <XAxis
               dataKey={xKey}
@@ -66,8 +69,7 @@ export function BarChartCard({
               axisLine={false}
               tickLine={false}
               width={52}
-              allowDecimals={false}
-              tickFormatter={compactNumber}
+              tickFormatter={(value) => `${compactNumber(value)}${unit ?? ""}`}
             />
             <Tooltip
               contentStyle={{
@@ -76,23 +78,27 @@ export function BarChartCard({
                 fontSize: 13,
                 boxShadow: "var(--shadow-md)",
               }}
-              cursor={{ fill: "#eef1f5" }}
             />
             {series.length > 1 ? <Legend wrapperStyle={{ fontSize: 12 }} /> : null}
-            {series.map((s, index) => (
-              <Bar
-                key={s.key}
-                dataKey={s.key}
-                name={s.label}
-                fill={s.color ?? CHART_SERIES[index % CHART_SERIES.length]}
-                radius={stacked ? [0, 0, 0, 0] : [4, 4, 0, 0]}
-                stackId={stacked ? "stack" : undefined}
-                maxBarSize={48}
-                animationDuration={700}
-                animationEasing="ease-out"
-              />
-            ))}
-          </BarChart>
+            {series.map((s, index) => {
+              const color = s.color ?? CHART_SERIES[index % CHART_SERIES.length];
+              return (
+                <Line
+                  key={s.key}
+                  type="monotone"
+                  dataKey={s.key}
+                  name={s.label}
+                  stroke={color}
+                  strokeWidth={2.5}
+                  dot={{ r: 4, strokeWidth: 0, fill: color }}
+                  activeDot={{ r: 6 }}
+                  connectNulls
+                  animationDuration={700}
+                  animationEasing="ease-out"
+                />
+              );
+            })}
+          </LineChart>
         </ResponsiveContainer>
       )}
     </div>

@@ -117,8 +117,8 @@ export default function CommunicationsPage() {
             <label htmlFor="ann-body">Message</label>
             <textarea id="ann-body" rows={3} value={body} onChange={(event) => setBody(event.target.value)} />
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div className="field" style={{ flex: 1 }}>
+          <div className="field-row">
+            <div className="field">
               <label htmlFor="ann-audience">Audience</label>
               <select id="ann-audience" value={audience} onChange={(event) => setAudience(event.target.value)}>
                 <option value="programme">One programme</option>
@@ -127,7 +127,7 @@ export default function CommunicationsPage() {
               </select>
             </div>
             {audience === "programme" ? (
-              <div className="field" style={{ flex: 1 }}>
+              <div className="field">
                 <label htmlFor="ann-programme">Programme</label>
                 <select id="ann-programme" value={programme} onChange={(event) => setProgramme(event.target.value)}>
                   <option value="">Select a programme</option>

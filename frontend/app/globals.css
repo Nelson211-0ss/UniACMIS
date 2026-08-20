@@ -698,6 +698,7 @@ h2 {
   align-items: baseline;
   justify-content: space-between;
   gap: var(--sp-3);
+  flex-wrap: wrap;
 }
 
 .dashboard-section:first-of-type {
@@ -784,6 +785,21 @@ h2 {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* A chart's own loading placeholder — shown while its data fetches, so a
+   chart card never sits blank the way `.chart-empty` (a genuine "no data")
+   implies. Height matches `.chart-empty` for a stable layout either way. */
+.chart-loading {
+  height: 220px;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 480px) {
+  .chart-card__title {
+    font-size: 0.875rem;
+  }
 }
 
 .chart-card__title {
@@ -1329,12 +1345,19 @@ tbody tr:last-child td {
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
+  object-fit: cover;
 }
 
 .avatar--sm {
   width: 26px;
   height: 26px;
   font-size: 0.6875rem;
+}
+
+.avatar--lg {
+  width: 64px;
+  height: 64px;
+  font-size: 1.5rem;
 }
 
 /* ------------------------------------------------------------------- pill */

@@ -194,12 +194,12 @@ export default function HrPage() {
               ))}
             </select>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div className="field" style={{ flex: 1 }}>
+          <div className="field-row">
+            <div className="field">
               <label htmlFor="leave-start">From</label>
               <input id="leave-start" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
             </div>
-            <div className="field" style={{ flex: 1 }}>
+            <div className="field">
               <label htmlFor="leave-end">To</label>
               <input id="leave-end" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
             </div>

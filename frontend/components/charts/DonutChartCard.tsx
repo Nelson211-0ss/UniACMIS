@@ -18,13 +18,25 @@ interface DonutChartCardProps {
   height?: number;
   /** Shown in the centre of the ring — typically the total or a headline %. */
   centre?: { value: string; label: string };
+  /** 0 renders a true pie (no hole, no centre label) — for a status
+   * breakdown where there is no single headline number to anchor there. */
+  innerRadius?: string | number;
 }
 
 /** A proportion of a whole (pass/fail/incomplete, collected/outstanding) —
- * a donut rather than a bare pie so a headline number can sit in the
- * centre, and never more than a handful of slices. */
-export function DonutChartCard({ title, subtitle, data, height = 240, centre }: DonutChartCardProps) {
+ * a donut by default so a headline number can sit in the centre, or a true
+ * pie via `innerRadius={0}` when the whole has no single number to show.
+ * Never more than a handful of slices either way. */
+export function DonutChartCard({
+  title,
+  subtitle,
+  data,
+  height = 240,
+  centre,
+  innerRadius = "62%",
+}: DonutChartCardProps) {
   const total = data.reduce((sum, slice) => sum + slice.value, 0);
+  const isPie = innerRadius === 0 || innerRadius === "0" || innerRadius === "0%";
 
   return (
     <div className="card chart-card">
@@ -44,11 +56,13 @@ export function DonutChartCard({ title, subtitle, data, height = 240, centre }: 
                 data={data}
                 dataKey="value"
                 nameKey="label"
-                innerRadius="62%"
+                innerRadius={innerRadius}
                 outerRadius="92%"
                 paddingAngle={data.length > 1 ? 2 : 0}
                 stroke="#ffffff"
                 strokeWidth={2}
+                animationDuration={700}
+                animationEasing="ease-out"
               >
                 {data.map((slice, index) => (
                   <Cell
@@ -68,7 +82,7 @@ export function DonutChartCard({ title, subtitle, data, height = 240, centre }: 
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
-          {centre ? (
+          {centre && !isPie ? (
             <div
               style={{
                 position: "absolute",

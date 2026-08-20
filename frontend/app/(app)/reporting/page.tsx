@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { DonutChartCard } from "@/components/charts/DonutChartCard";
+import { LineChartCard } from "@/components/charts/LineChartCard";
 import { BarChartIcon, DownloadIcon } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
 import { CHART_STATUS } from "@/lib/chartColors";
@@ -59,6 +60,7 @@ export default function ReportingPage() {
     incomplete: number;
     pass_rate_percent: number | null;
   } | null>(null);
+  const [passTrend, setPassTrend] = useState<Array<{ semester: string; passRate: number | null }>>([]);
 
   const [reportKey, setReportKey] = useState(REPORTS[0].key);
   const [downloading, setDownloading] = useState(false);
@@ -74,6 +76,27 @@ export default function ReportingPage() {
       })
       .catch((error) => setState(error instanceof ApiFailure && error.offline ? "offline" : "error"));
   }, []);
+
+  useEffect(() => {
+    if (!passCourse || semesters.length === 0) {
+      setPassTrend([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      semesters.map((semester) =>
+        api
+          .passRateReport(Number(passCourse), semester.id)
+          .then((result) => ({ semester: semester.name, passRate: result.pass_rate_percent }))
+          .catch(() => ({ semester: semester.name, passRate: null })),
+      ),
+    ).then((rows) => {
+      if (!cancelled) setPassTrend(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [passCourse, semesters]);
 
   async function lookupPassRate() {
     if (!passCourse || !passSemester) return;
@@ -255,6 +278,18 @@ export default function ReportingPage() {
             ) : null}
           </div>
         </div>
+      ) : null}
+
+      {passCourse ? (
+        <LineChartCard
+          title="Pass rate trend"
+          subtitle={`${courses.find((c) => c.id === Number(passCourse))?.code ?? "Selected course"} across every semester`}
+          data={passTrend}
+          xKey="semester"
+          series={[{ key: "passRate", label: "Pass rate" }]}
+          unit="%"
+          height={220}
+        />
       ) : null}
 
       <div className="section-title">

@@ -5,11 +5,16 @@ import Link from "next/link";
 
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { DonutChartCard } from "@/components/charts/DonutChartCard";
+import { LineChartCard } from "@/components/charts/LineChartCard";
 import { Stamp } from "@/components/Stamp";
 import { StatTile, StatTileSkeleton } from "@/components/StatTile";
 import {
+  BedIcon,
+  BookOpenIcon,
+  BriefcaseIcon,
   CalendarIcon,
   CheckCircleIcon,
+  CreditCardIcon,
   InboxIcon,
   UsersIcon,
   WifiOffIcon,
@@ -38,6 +43,15 @@ interface EnrollmentData {
   by_programme: Record<string, number>;
 }
 
+interface StudentSummary {
+  id: number;
+  full_name: string;
+  student_id: string;
+  programme_name: string;
+  current_level: number;
+  photo: string | null;
+}
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -47,6 +61,12 @@ function initials(name: string): string {
 
 export default function DashboardPage() {
   const { user, can, hasRole } = useAuth();
+  const isStudent = hasRole("student");
+  const isFinanceStaff = hasRole("finance");
+  const isLibraryStaff = hasRole("library");
+  const isHrStaff = hasRole("hr");
+  const isHostelStaff = hasRole("hostel");
+
   const [calendar, setCalendar] = useState<CalendarState | null>(null);
   const [calendarLoaded, setCalendarLoaded] = useState(false);
   const [studentCount, setStudentCount] = useState<number | null>(null);
@@ -58,7 +78,24 @@ export default function DashboardPage() {
   const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
   const [programmeNames, setProgrammeNames] = useState<Map<number, string>>(new Map());
 
-  const canSeeStudents = user?.permissions.includes("registry.view_student") ?? false;
+  const [student, setStudent] = useState<StudentSummary | null>(null);
+  const [photoFailed, setPhotoFailed] = useState(false);
+
+  const [financeBalance, setFinanceBalance] = useState<number | null>(null);
+  const [financeTrend, setFinanceTrend] = useState<Array<{ month: string; amount: number }>>([]);
+
+  const [libraryStats, setLibraryStats] = useState<{ activeLoans: number; finesOwed: number } | null>(null);
+  const [loanStatusSlices, setLoanStatusSlices] = useState<
+    Array<{ key: string; label: string; value: number; color: string }>
+  >([]);
+
+  const [leaveStats, setLeaveStats] = useState<{ pending: number; total: number } | null>(null);
+
+  const [hostelStats, setHostelStats] = useState<{ rooms: number; available: number; occupied: number } | null>(
+    null,
+  );
+
+  const canSeeStudents = !isStudent && (user?.permissions.includes("registry.view_student") ?? false);
   const canSeeAnalytics = can("reporting.view_dashboard");
 
   useEffect(() => {
@@ -72,6 +109,10 @@ export default function DashboardPage() {
         if (error instanceof ApiFailure && error.offline) setOffline(true);
       })
       .finally(() => setCalendarLoaded(true));
+
+    if (isStudent) {
+      api.myStudent().then(setStudent).catch(() => undefined);
+    }
 
     if (canSeeStudents) {
       api
@@ -93,9 +134,89 @@ export default function DashboardPage() {
         .catch(() => undefined);
     }
 
+    if (isFinanceStaff) {
+      Promise.all([api.invoices(), api.payments()])
+        .then(([invoicePage, paymentPage]) => {
+          setFinanceBalance(invoicePage.results.reduce((sum, invoice) => sum + Number(invoice.balance), 0));
+
+          const byMonth = new Map<string, number>();
+          for (const payment of paymentPage.results) {
+            if (payment.status !== "confirmed" || !payment.confirmed_at) continue;
+            const date = new Date(payment.confirmed_at);
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+            byMonth.set(key, (byMonth.get(key) ?? 0) + Number(payment.amount));
+          }
+          setFinanceTrend(
+            Array.from(byMonth.entries())
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([key, amount]) => {
+                const [year, month] = key.split("-");
+                const label = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(undefined, {
+                  month: "short",
+                  year: "2-digit",
+                });
+                return { month: label, amount };
+              }),
+          );
+        })
+        .catch(() => undefined);
+    }
+
+    if (isLibraryStaff) {
+      api
+        .loans()
+        .then((loanPage) => {
+          const loans = loanPage.results;
+          setLibraryStats({
+            activeLoans: loans.filter((loan) => loan.status === "active").length,
+            finesOwed: loans.reduce((sum, loan) => sum + Number(loan.owed), 0),
+          });
+          const counts = loans.reduce<Record<string, number>>((acc, loan) => {
+            acc[loan.status] = (acc[loan.status] ?? 0) + 1;
+            return acc;
+          }, {});
+          setLoanStatusSlices(
+            Object.entries(counts).map(([status, count]) => ({
+              key: status,
+              label: status,
+              value: count,
+              color: status === "active" ? CHART_STATUS.warning : status === "lost" ? CHART_STATUS.bad : CHART_STATUS.good,
+            })),
+          );
+        })
+        .catch(() => undefined);
+    }
+
+    if (isHrStaff) {
+      api
+        .leaveRequests()
+        .then((page) => {
+          const rows = page.results;
+          setLeaveStats({
+            total: rows.length,
+            pending: rows.filter((row) => row.status === "submitted" || row.status === "endorsed").length,
+          });
+        })
+        .catch(() => undefined);
+    }
+
+    if (isHostelStaff) {
+      api
+        .rooms()
+        .then((page) => {
+          const rooms = page.results;
+          setHostelStats({
+            rooms: rooms.length,
+            available: rooms.reduce((sum, room) => sum + room.available_beds, 0),
+            occupied: rooms.reduce((sum, room) => sum + room.occupied_beds, 0),
+          });
+        })
+        .catch(() => undefined);
+    }
+
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canSeeStudents, canSeeAnalytics]);
+  }, [isStudent, canSeeStudents, canSeeAnalytics, isFinanceStaff, isLibraryStaff, isHrStaff, isHostelStaff]);
 
   const firstName = user?.full_name.split(" ")[0] ?? "";
   const links = visibleNav(can, hasRole).filter((item) => item.href !== "/dashboard" && item.href !== "/outbox");
@@ -108,6 +229,8 @@ export default function DashboardPage() {
       }))
     : [];
 
+  const showPhoto = isStudent && !!student?.photo && !photoFailed;
+
   return (
     <>
       <div className="page-header">
@@ -118,10 +241,37 @@ export default function DashboardPage() {
             &middot; University Academic Management Information System
           </p>
         </div>
-        <span className="avatar" aria-hidden="true">
-          {user ? initials(user.full_name) : "?"}
-        </span>
+        {showPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={student!.photo!} alt="" className="avatar" onError={() => setPhotoFailed(true)} />
+        ) : (
+          <span className="avatar" aria-hidden="true">
+            {user ? initials(user.full_name) : "?"}
+          </span>
+        )}
       </div>
+
+      {isStudent && student ? (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+          {showPhoto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={student.photo!} alt="" className="avatar avatar--lg" onError={() => setPhotoFailed(true)} />
+          ) : (
+            <span className="avatar avatar--lg" aria-hidden="true">
+              {initials(student.full_name)}
+            </span>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <h2>{student.full_name}</h2>
+            <p className="muted" style={{ margin: "4px 0 0" }}>
+              {student.student_id} &middot; {student.programme_name} &middot; Year {student.current_level}
+            </p>
+          </div>
+          <Link href="/my" className="dashboard-section__link" style={{ marginLeft: "auto" }}>
+            Full portal →
+          </Link>
+        </div>
+      ) : null}
 
       {offline ? (
         <div className="alert alert--warning">
@@ -199,7 +349,7 @@ export default function DashboardPage() {
       </div>
 
       {calendarLoaded && calendar?.configured ? (
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
           <Stamp
             status={calendar.registration_open ? "verified" : "hold"}
             label={calendar.registration_open ? "Open" : "Closed"}
@@ -245,6 +395,146 @@ export default function DashboardPage() {
                 ]}
               />
             ) : null}
+          </div>
+        </>
+      ) : null}
+
+      {isFinanceStaff ? (
+        <>
+          <div className="dashboard-section">
+            <h2>Finance</h2>
+            <Link href="/finance" className="dashboard-section__link">
+              Open finance →
+            </Link>
+          </div>
+          <div className="grid--split">
+            <div className="card stat stat--accent-blue">
+              <div className="stat__top">
+                <span className="stat__label">Outstanding balance</span>
+                <span className="stat__icon">
+                  <CreditCardIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">
+                {financeBalance !== null ? financeBalance.toLocaleString() : "—"}
+              </div>
+            </div>
+            <LineChartCard
+              title="Payments collected by month"
+              subtitle="Confirmed payments only"
+              data={financeTrend}
+              xKey="month"
+              series={[{ key: "amount", label: "Collected" }]}
+              height={200}
+            />
+          </div>
+        </>
+      ) : null}
+
+      {isLibraryStaff ? (
+        <>
+          <div className="dashboard-section">
+            <h2>Library</h2>
+            <Link href="/library" className="dashboard-section__link">
+              Open library →
+            </Link>
+          </div>
+          <div className="grid--split">
+            <div className="grid">
+              <div className="card stat stat--accent-amber">
+                <div className="stat__top">
+                  <span className="stat__label">Active loans</span>
+                  <span className="stat__icon">
+                    <BookOpenIcon size={18} />
+                  </span>
+                </div>
+                <div className="stat__value">{libraryStats?.activeLoans ?? "—"}</div>
+              </div>
+              <div className="card stat stat--accent-rose">
+                <div className="stat__top">
+                  <span className="stat__label">Fines outstanding</span>
+                  <span className="stat__icon">
+                    <BookOpenIcon size={18} />
+                  </span>
+                </div>
+                <div className="stat__value">
+                  {libraryStats ? (libraryStats.finesOwed > 0 ? libraryStats.finesOwed.toLocaleString() : "0") : "—"}
+                </div>
+              </div>
+            </div>
+            <DonutChartCard title="Loan status" data={loanStatusSlices} innerRadius={0} height={200} />
+          </div>
+        </>
+      ) : null}
+
+      {isHrStaff ? (
+        <>
+          <div className="dashboard-section">
+            <h2>HR &amp; leave</h2>
+            <Link href="/hr" className="dashboard-section__link">
+              Open HR →
+            </Link>
+          </div>
+          <div className="grid">
+            <div className="card stat stat--accent-purple">
+              <div className="stat__top">
+                <span className="stat__label">Leave requests awaiting action</span>
+                <span className="stat__icon">
+                  <BriefcaseIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{leaveStats?.pending ?? "—"}</div>
+            </div>
+            <div className="card stat stat--accent-teal">
+              <div className="stat__top">
+                <span className="stat__label">Total leave requests</span>
+                <span className="stat__icon">
+                  <BriefcaseIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{leaveStats?.total ?? "—"}</div>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      {isHostelStaff ? (
+        <>
+          <div className="dashboard-section">
+            <h2>Hostel</h2>
+            <Link href="/hostel" className="dashboard-section__link">
+              Open hostel →
+            </Link>
+          </div>
+          <div className="grid--split">
+            <div className="grid">
+              <div className="card stat stat--accent-blue">
+                <div className="stat__top">
+                  <span className="stat__label">Rooms</span>
+                  <span className="stat__icon">
+                    <BedIcon size={18} />
+                  </span>
+                </div>
+                <div className="stat__value">{hostelStats?.rooms ?? "—"}</div>
+              </div>
+              <div className="card stat stat--accent-teal">
+                <div className="stat__top">
+                  <span className="stat__label">Available beds</span>
+                  <span className="stat__icon">
+                    <BedIcon size={18} />
+                  </span>
+                </div>
+                <div className="stat__value">{hostelStats?.available ?? "—"}</div>
+              </div>
+            </div>
+            <DonutChartCard
+              title="Bed occupancy"
+              data={[
+                { key: "occupied", label: "Occupied", value: hostelStats?.occupied ?? 0, color: CHART_STATUS.warning },
+                { key: "available", label: "Available", value: hostelStats?.available ?? 0, color: CHART_STATUS.good },
+              ]}
+              height={200}
+            />
           </div>
         </>
       ) : null}

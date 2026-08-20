@@ -5,8 +5,10 @@
 
 import { useEffect, useState } from "react";
 
+import { DonutChartCard } from "@/components/charts/DonutChartCard";
 import { BookOpenIcon } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
+import { CHART_STATUS } from "@/lib/chartColors";
 import { useAuth } from "@/lib/auth";
 
 interface LibraryItem {
@@ -82,6 +84,21 @@ export default function LibraryPage() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  const loanStatusSlices = Object.entries(
+    loans.reduce<Record<string, number>>((acc, loan) => {
+      acc[loan.status] = (acc[loan.status] ?? 0) + 1;
+      return acc;
+    }, {}),
+  ).map(([status, count]) => ({
+    key: status,
+    label: status,
+    value: count,
+    color: status === "active" ? CHART_STATUS.warning : status === "lost" ? CHART_STATUS.bad : CHART_STATUS.good,
+  }));
+
+  const activeLoans = loans.filter((loan) => loan.status === "active").length;
+  const finesOwed = loans.reduce((sum, loan) => sum + Number(loan.owed), 0);
 
   async function addItem() {
     if (!newTitle.trim()) return;
@@ -164,6 +181,41 @@ export default function LibraryPage() {
       {state === "offline" ? (
         <div className="alert alert--warning">
           <span>No connection. Showing whatever loaded earlier on this device.</span>
+        </div>
+      ) : null}
+
+      {loans.length > 0 ? (
+        <div className="grid--split">
+          <div className="grid">
+            <div className="card stat stat--accent-teal">
+              <div className="stat__top">
+                <span className="stat__label">Catalogue items</span>
+                <span className="stat__icon">
+                  <BookOpenIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{items.length}</div>
+            </div>
+            <div className="card stat stat--accent-amber">
+              <div className="stat__top">
+                <span className="stat__label">Active loans</span>
+                <span className="stat__icon">
+                  <BookOpenIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{activeLoans}</div>
+            </div>
+            <div className="card stat stat--accent-rose">
+              <div className="stat__top">
+                <span className="stat__label">Fines outstanding</span>
+                <span className="stat__icon">
+                  <BookOpenIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{finesOwed > 0 ? finesOwed.toLocaleString() : "0"}</div>
+            </div>
+          </div>
+          <DonutChartCard title="Loan status" data={loanStatusSlices} innerRadius={0} height={220} />
         </div>
       ) : null}
 

@@ -26,3 +26,11 @@ export const CHART_STATUS = {
   bad: "#a83c32", // --status-hold
   neutral: "#4b5563", // --status-neutral
 };
+
+/** A fixed-width y-axis clips a six-figure amount (currency totals routinely
+ * are) down to its last couple of digits rather than wrapping — this keeps
+ * every tick short enough to fit regardless of magnitude. Tooltips still
+ * show the exact figure; only the axis compacts. */
+export function compactNumber(value: number): string {
+  return new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}

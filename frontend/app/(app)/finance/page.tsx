@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 
+import { LineChartCard } from "@/components/charts/LineChartCard";
 import { CreditCardIcon } from "@/components/icons";
 import { ApiFailure, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -32,6 +33,7 @@ interface Payment {
   status: string;
   reference: string;
   receipt_number: string;
+  confirmed_at: string | null;
 }
 
 interface Defaulter {
@@ -101,6 +103,26 @@ export default function FinancePage() {
   }, []);
 
   const balance = invoices.reduce((sum, invoice) => sum + Number(invoice.balance), 0);
+
+  const monthlyCollections = (() => {
+    const byMonth = new Map<string, number>();
+    for (const payment of payments) {
+      if (payment.status !== "confirmed" || !payment.confirmed_at) continue;
+      const date = new Date(payment.confirmed_at);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      byMonth.set(key, (byMonth.get(key) ?? 0) + Number(payment.amount));
+    }
+    return Array.from(byMonth.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, amount]) => {
+        const [year, month] = key.split("-");
+        const label = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(undefined, {
+          month: "short",
+          year: "2-digit",
+        });
+        return { month: label, amount };
+      });
+  })();
 
   async function generateInvoice() {
     if (!genStudent || !genSemester) return;
@@ -204,6 +226,17 @@ export default function FinancePage() {
           <div className="stat__value">{payments.length}</div>
         </div>
       </div>
+
+      {monthlyCollections.length > 0 ? (
+        <LineChartCard
+          title="Payments collected by month"
+          subtitle="Confirmed payments only"
+          data={monthlyCollections}
+          xKey="month"
+          series={[{ key: "amount", label: "Collected" }]}
+          height={220}
+        />
+      ) : null}
 
       {canManage ? (
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>

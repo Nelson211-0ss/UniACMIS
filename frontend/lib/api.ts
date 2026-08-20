@@ -172,9 +172,14 @@ export const api = {
         method: "POST",
         body: { refresh: tokens.refresh },
       });
+    } catch {
+      // Sign-out must always succeed on this device even if the server call
+      // didn't: an access token that expired while the tab sat idle makes this
+      // 401 (the refresh-and-retry in `request` fails too, since the refresh
+      // token is stale by then), and a dropped connection makes it a network
+      // error. Either way, the caller only wants to be signed out locally —
+      // failing here would strand them on the page with no way to leave it.
     } finally {
-      // Always clear locally, even if the server could not be reached — the user
-      // asked to sign out of a shared machine.
       tokens.clear();
     }
   },
@@ -252,6 +257,7 @@ export const api = {
       curriculum_version: number | null;
       current_level: number;
       status: string;
+      photo: string | null;
     }>(`/registry/students/${summary.id}/`);
   },
 

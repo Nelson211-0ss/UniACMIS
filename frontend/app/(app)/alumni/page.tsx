@@ -140,12 +140,12 @@ export default function AlumniPage() {
               <label htmlFor="event-title">Title</label>
               <input id="event-title" value={newTitle} onChange={(event) => setNewTitle(event.target.value)} />
             </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div className="field" style={{ flex: 1 }}>
+            <div className="field-row">
+              <div className="field">
                 <label htmlFor="event-date">Date</label>
                 <input id="event-date" type="date" value={newDate} onChange={(event) => setNewDate(event.target.value)} />
               </div>
-              <div className="field" style={{ flex: 1 }}>
+              <div className="field">
                 <label htmlFor="event-location">Location</label>
                 <input id="event-location" value={newLocation} onChange={(event) => setNewLocation(event.target.value)} />
               </div>
