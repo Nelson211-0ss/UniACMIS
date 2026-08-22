@@ -70,10 +70,12 @@ export default function DashboardPage() {
   // carries what that role actually came for. Keeping a staff dashboard here as
   // well would mean two homes, the second one showing them nothing they can use.
   const isApplicant = hasRole("applicant");
+  const isHod = hasRole("hod");
   useEffect(() => {
     if (isStudent) router.replace("/my");
     else if (isApplicant) router.replace("/apply");
-  }, [isStudent, isApplicant, router]);
+    else if (isHod) router.replace("/department");
+  }, [isStudent, isApplicant, isHod, router]);
   const isFinanceStaff = hasRole("finance");
   const isLibraryStaff = hasRole("library");
   const isHrStaff = hasRole("hr");

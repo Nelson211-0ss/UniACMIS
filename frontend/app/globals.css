@@ -52,14 +52,14 @@
   --ink-soft: #374151;
   --on-ink: #ffffff;
 
-  --brand: #15803d;
-  --brand-strong: #166534;
-  --brand-bright: #16a34a;
-  --brand-soft: #dcfce7;
+  --brand: #1d4ed8;
+  --brand-strong: #1e40af;
+  --brand-bright: #3b82f6;
+  --brand-soft: #dbeafe;
   --on-brand: #ffffff;
   /* The navigation shell — deeper than `--brand` so an active item can be
      brighter than the surface it sits on rather than darker. */
-  --brand-deep: #0b4a2f;
+  --brand-deep: #172554;
   --brand-deep-line: rgba(255, 255, 255, 0.12);
 
   --seal: #b8862e;
@@ -120,8 +120,20 @@
      above, which carry real state ("this is overdue"), never decoration. */
   /* A real blue, not an alias of `--ink` — `--ink` is now near-black slate, and
      a "blue" tile that renders grey is worse than no colour at all. */
-  --stat-blue: #2563eb;
-  --stat-blue-container: #dbeafe;
+  --stat-blue: #6d28d9;
+  --stat-blue-container: #ede9fe;
+
+  /* Icon-tile identity hues (see `.figure__tile--*`). */
+  --tile-green: #15803d;
+  --tile-green-bg: #dcfce7;
+  --tile-blue: #1d4ed8;
+  --tile-blue-bg: #dbeafe;
+  --tile-purple: #6d28d9;
+  --tile-purple-bg: #ede9fe;
+  --tile-amber: #b45309;
+  --tile-amber-bg: #fef3c7;
+  --tile-red: #b91c1c;
+  --tile-red-bg: #fee2e2;
   --stat-teal: var(--status-verified);
   --stat-teal-container: var(--status-verified-bg);
   --stat-amber: var(--status-pending);
@@ -229,14 +241,14 @@
   --ink-soft: #374151;
   --on-ink: #111827;
 
-  /* Green lifted for a dark surface: #15803d on near-black is too dim to read
-     as the brand, and white button text needs the fill to stay dark enough. */
-  --brand: #22a559;
-  --brand-strong: #2bb765;
-  --brand-bright: #34d399;
-  --brand-soft: #0f2e1d;
-  --on-brand: #ffffff;
-  --brand-deep: #08301f;
+  /* Lifted for a dark surface: #1d4ed8 on near-black is too dim to read as the
+     brand, and white button text needs the fill to stay dark enough. */
+  --brand: #3b82f6;
+  --brand-strong: #60a5fa;
+  --brand-bright: #60a5fa;
+  --brand-soft: #17233d;
+  --on-brand: #0b1220;
+  --brand-deep: #0b1533;
   --brand-deep-line: rgba(255, 255, 255, 0.1);
 
   --seal: #caa053;
@@ -267,8 +279,19 @@
   --stat-red-container: #3a1712;
   --stat-orange: #f0924a;
   --stat-orange-container: #3a2210;
-  --stat-blue: #6ea8fe;
-  --stat-blue-container: #14243d;
+  --stat-blue: #a78bfa;
+  --stat-blue-container: #241a3d;
+
+  --tile-green: #4ade80;
+  --tile-green-bg: #0f2e1d;
+  --tile-blue: #60a5fa;
+  --tile-blue-bg: #17233d;
+  --tile-purple: #a78bfa;
+  --tile-purple-bg: #241a3d;
+  --tile-amber: #fbbf24;
+  --tile-amber-bg: #33270f;
+  --tile-red: #f87171;
+  --tile-red-bg: #3a1712;
 
   /* Navy-tinted shadows read as murk once the surface behind them is dark
      already; plain black at higher opacity is what actually reads as
@@ -610,13 +633,22 @@ svg {
   gap: var(--sp-3);
 }
 
+/* Fills the column beside the sidebar rather than sitting in a centred 1180px
+   band — this app is dashboards, tables and side-by-side panels, all of which
+   want the width, and on a wide monitor the old cap left a third of the screen
+   as empty gutter. Padding grows a little at large sizes so "full width" still
+   has margins. */
 .content {
   flex: 1;
   min-width: 0;
-  padding: var(--sp-6);
-  max-width: 1180px;
   width: 100%;
-  margin: 0 auto;
+  padding: var(--sp-6);
+}
+
+@media (min-width: 1500px) {
+  .content {
+    padding: var(--sp-6) var(--sp-8);
+  }
 }
 
 @media (max-width: 560px) {
@@ -862,7 +894,11 @@ h2 {
   display: grid;
   align-items: start;
   gap: var(--gap);
-  grid-template-columns: 2fr 1fr;
+  /* `minmax(0, …)` rather than a bare `2fr 1fr`: a grid item's default
+     `min-width: auto` lets it size to content, and recharts' ResponsiveContainer
+     measures its parent before that resolves — so a chart in this grid drew
+     itself a couple of hundred pixels wide inside a full-width card. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
 
 @media (max-width: 860px) {
@@ -2658,24 +2694,25 @@ button.sidebar__footer-signout,
 
 /* ---- header ---- */
 
+/* White, not brand-coloured: the sidebar already carries the institution, and
+   a second coloured band directly below it left the page with two competing
+   headers and nowhere for the eye to land. Dark text on white here also means
+   the header's own controls inherit the normal token colours instead of each
+   needing a white override. */
 .topbar {
-  background: var(--brand-deep);
-  border-bottom: none;
-  color: #ffffff;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
   gap: var(--sp-4);
 }
 
 .topbar__brand,
 .topbar__brand-name {
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .topbar__menu-btn {
-  color: #ffffff;
-}
-
-button.topbar__menu-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
 }
 
 /* The portal's own name, beside the product name — "which of these am I in". */
@@ -2695,13 +2732,13 @@ button.topbar__menu-btn:hover:not(:disabled) {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.0625rem;
-  color: #ffffff;
+  color: var(--ink);
   letter-spacing: -0.01em;
 }
 
 .topbar__portal-sub {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--muted);
 }
 
 .topbar__notify {
@@ -2712,14 +2749,14 @@ button.topbar__menu-btn:hover:not(:disabled) {
   padding: 6px 10px;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: #ffffff;
+  color: var(--text);
   font-size: 0.875rem;
   text-decoration: none;
 }
 
-button.topbar__notify:hover:not(:disabled),
 a.topbar__notify:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--surface-sunken);
+  text-decoration: none;
 }
 
 .topbar__notify-count {
@@ -2742,22 +2779,8 @@ a.topbar__notify:hover {
 
 /* The signed-in identity, mirrored from the sidebar footer so the header is
    self-sufficient on a phone where the sidebar is a closed drawer. */
-.topbar__user .menu__trigger,
-.topbar__user .menu__name {
-  color: #ffffff;
-}
-
-.topbar__user .menu__role,
-.topbar__user .menu__trigger svg {
-  color: rgba(255, 255, 255, 0.7);
-}
-
 .topbar__user button.menu__trigger:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.topbar__user .avatar {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--surface-sunken);
 }
 
 @media (max-width: 860px) {
@@ -2798,21 +2821,40 @@ a.topbar__notify:hover {
   margin-bottom: var(--sp-1);
 }
 
-.figure__tile--green {
-  background: var(--brand-soft);
-  color: var(--brand);
+/* Icon tiles carry their own hue rather than following `--brand`: on a row of
+   five cards the tile is the fastest way to tell them apart, and five
+   brand-blue squares would make them one undifferentiated block. These are
+   identity, not status — `--stat-red`/`--stat-orange` stay reserved for a
+   figure that is actually wrong. */
+.figure__tile--green,
+.notifs__tile--green,
+.quickgrid__tile--green {
+  background: var(--tile-green-bg);
+  color: var(--tile-green);
 }
-.figure__tile--red {
-  background: var(--stat-red-container);
-  color: var(--stat-red);
+.figure__tile--blue,
+.notifs__tile--blue,
+.quickgrid__tile--blue {
+  background: var(--tile-blue-bg);
+  color: var(--tile-blue);
 }
-.figure__tile--blue {
-  background: var(--stat-blue-container);
-  color: var(--stat-blue);
+.figure__tile--purple,
+.notifs__tile--purple,
+.quickgrid__tile--purple {
+  background: var(--tile-purple-bg);
+  color: var(--tile-purple);
 }
-.figure__tile--amber {
-  background: var(--stat-orange-container);
-  color: var(--stat-orange);
+.figure__tile--amber,
+.notifs__tile--amber,
+.quickgrid__tile--amber {
+  background: var(--tile-amber-bg);
+  color: var(--tile-amber);
+}
+.figure__tile--red,
+.notifs__tile--red,
+.quickgrid__tile--red {
+  background: var(--tile-red-bg);
+  color: var(--tile-red);
 }
 
 .figure__label {

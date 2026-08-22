@@ -276,12 +276,12 @@ export default function StudentDashboardPage() {
 
 
   const QUICK_ACCESS = [
-    { href: "/my/courses", label: "Register Courses", icon: UserPlusIcon },
-    { href: "/my/timetable", label: "View Timetable", icon: CalendarIcon },
-    { href: "/my/finance", label: "Fees Statement", icon: CreditCardIcon },
-    { href: "/my/results", label: "View Results", icon: LayersIcon },
-    { href: "/documents", label: "My Documents", icon: FileTextIcon },
-    { href: "/my/attendance", label: "Attendance", icon: ClockIcon },
+    { href: "/my/courses", label: "Register Courses", icon: UserPlusIcon, tile: "green" },
+    { href: "/my/timetable", label: "View Timetable", icon: CalendarIcon, tile: "blue" },
+    { href: "/my/finance", label: "Fees Statement", icon: CreditCardIcon, tile: "red" },
+    { href: "/my/results", label: "View Results", icon: LayersIcon, tile: "purple" },
+    { href: "/documents", label: "My Documents", icon: FileTextIcon, tile: "amber" },
+    { href: "/my/attendance", label: "Attendance", icon: ClockIcon, tile: "blue" },
   ];
 
   return (
@@ -289,7 +289,7 @@ export default function StudentDashboardPage() {
       {/* ------------------------------------------------------- greeting */}
       <div className="page-header">
         <div>
-          <h1>Welcome back, {firstName || "student"} 👋</h1>
+          <h1>Welcome back, {firstName || "student"}</h1>
           <p className="page-subtitle">
             {student?.programme_name ?? "Your programme"}
             {semester ? ` · Year ${student?.current_level ?? 1} · ${semester.name}` : ""}
@@ -454,7 +454,7 @@ export default function StudentDashboardPage() {
                 <li key={notice.id} className="notifs__item">
                   <span
                     className={`notifs__tile ${
-                      index % 3 === 1 ? "notifs__tile--red" : index % 3 === 2 ? "notifs__tile--blue" : ""
+                      index % 3 === 1 ? "notifs__tile--amber" : index % 3 === 2 ? "notifs__tile--purple" : "notifs__tile--blue"
                     }`}
                   >
                     <MegaphoneIcon size={15} />
@@ -477,9 +477,9 @@ export default function StudentDashboardPage() {
           <h2>Quick Access</h2>
         </div>
         <div className="quickgrid">
-          {QUICK_ACCESS.map(({ href, label, icon: Icon }) => (
+          {QUICK_ACCESS.map(({ href, label, icon: Icon, tile }) => (
             <Link key={href} href={href} className="quickgrid__item">
-              <span className="quickgrid__tile">
+              <span className={`quickgrid__tile quickgrid__tile--${tile}`}>
                 <Icon size={20} />
               </span>
               <span className="quickgrid__label">{label}</span>

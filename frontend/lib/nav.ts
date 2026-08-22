@@ -59,9 +59,9 @@ export const NAV: NavItem[] = [
     icon: DashboardIcon,
     permission: null,
     // Each of these has its own home — `/my` for a student, `/apply` for an
-    // applicant — so listing the staff dashboard as well would be one link too
-    // many pointing somewhere they have no use for.
-    hiddenFor: ["student", "applicant"],
+    // applicant, `/department` for a HoD — so listing the staff dashboard as
+    // well would be one link too many pointing somewhere they cannot use.
+    hiddenFor: ["student", "applicant", "hod"],
     section: "Overview",
   },
 
@@ -130,6 +130,17 @@ export const NAV: NavItem[] = [
     roles: ["student"],
     section: "Student",
     description: "Invoices, receipts and your fee balance.",
+  },
+
+  // ------------------------------------------------------------- department
+  {
+    href: "/department",
+    label: "Department",
+    icon: DashboardIcon,
+    permission: null,
+    roles: ["hod"],
+    section: "Overview",
+    description: "Your department at a glance.",
   },
 
   // ------------------------------------------------------ academic operations

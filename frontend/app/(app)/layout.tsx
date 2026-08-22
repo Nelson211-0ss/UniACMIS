@@ -37,12 +37,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const isApplicant = hasRole("applicant");
 
   /** Which portal this is, shown beside the product name in the header. */
+  const isHod = hasRole("hod");
   const portalName = isApplicant
     ? "Application Portal"
     : isStudent
       ? "Student Portal"
-      : "Staff Portal";
-  const home = isApplicant ? "/apply" : isStudent ? "/my" : "/dashboard";
+      : isHod
+        ? "HoD Portal"
+        : "Staff Portal";
+  const home = isApplicant ? "/apply" : isStudent ? "/my" : isHod ? "/department" : "/dashboard";
 
   useEffect(() => {
     if (!isStudent) return;

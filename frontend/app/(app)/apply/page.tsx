@@ -137,7 +137,7 @@ export default function ApplicantPortalPage() {
     <>
       <div className="page-header">
         <div>
-          <h1>Good day{app ? `, ${app.first_name}` : ""} 👋</h1>
+          <h1>Good day{app ? `, ${app.first_name}` : ""}</h1>
           <p className="page-subtitle">Track and manage your admission application</p>
         </div>
         {app ? (
@@ -359,7 +359,7 @@ export default function ApplicantPortalPage() {
                   <li key={item.id} className="notifs__item">
                     <span
                       className={`notifs__tile ${
-                        index % 3 === 1 ? "notifs__tile--red" : index % 3 === 2 ? "notifs__tile--blue" : ""
+                        index % 3 === 1 ? "notifs__tile--amber" : index % 3 === 2 ? "notifs__tile--purple" : "notifs__tile--blue"
                       }`}
                     >
                       <MegaphoneIcon size={15} />

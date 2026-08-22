@@ -10,10 +10,10 @@
  * fails to resolve in every browser. Literal values here are the fix; keep
  * them in sync with globals.css by hand, since there are only five of them.
  *
- * Two full sets, not one: the light-mode navy (`#1b2a4a`) reads as almost
- * the same tone as a dark card background, so a single-series bar or line
- * chart would all but disappear under the dark theme rather than merely
- * looking slightly off. `useChartPalette()` is how the three chart
+ * Two full sets, not one: the light-mode brand blue reads as almost the same
+ * tone as a dark card background, so a single-series bar or line chart would
+ * all but disappear under the dark theme rather than merely looking slightly
+ * off. `useChartPalette()` is how the three chart
  * components pick the right set; `CHART_SERIES`/`CHART_GRID`/`CHART_TICK`/
  * `CHART_STATUS` stay exported as the light set for the handful of pages
  * that build an explicit slice colour (e.g. `CHART_STATUS.good`) outside a
@@ -25,7 +25,7 @@
 import { useTheme } from "@/lib/theme";
 
 export const CHART_SERIES_LIGHT = [
-  "#1b2a4a", // --chart-1 / --ink
+  "#1d4ed8", // --chart-1 / --brand
   "#b8862e", // --chart-2 / --seal
   "#1f7a72", // --chart-3
   "#7a3b69", // --chart-4
@@ -33,7 +33,7 @@ export const CHART_SERIES_LIGHT = [
 ];
 
 export const CHART_SERIES_DARK = [
-  "#7195d6", // --ink-strong (dark)
+  "#60a5fa", // --brand (dark)
   "#e0b568", // --seal-strong (dark)
   "#4fb3a3", // brightened --chart-3
   "#c17ba8", // brightened --chart-4
