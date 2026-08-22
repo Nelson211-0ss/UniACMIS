@@ -1101,6 +1101,7 @@ export const api = {
 
   announcements(params = "?page_size=50") {
     return request<{
+      count: number;
       results: Array<{
         id: number;
         title: string;
@@ -1270,6 +1271,18 @@ export const api = {
     return request<ApplicationDetail>(`/admissions/applications/${id}/decide/`, {
       method: "POST",
       body: { decision, reason },
+    });
+  },
+
+  acceptOffer(id: number) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/accept-offer/`, {
+      method: "POST",
+    });
+  },
+
+  declineOffer(id: number) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/decline-offer/`, {
+      method: "POST",
     });
   },
 

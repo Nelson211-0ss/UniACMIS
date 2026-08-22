@@ -38,11 +38,30 @@
      for the same reason. */
   --scroll-shadow: rgba(15, 23, 42, 0.18);
 
-  /* ---- brand: navy ink + gold seal ---- */
-  --ink: #1b2a4a;
-  --ink-strong: #12203a;
-  --ink-soft: #243660;
+  /* ---- brand: University of Juba green ----
+   *
+   * `--ink` is the *text* colour for headings, stat figures and emphasis: a
+   * near-black slate, because a page of green headings reads as decoration
+   * rather than hierarchy. The green lives in `--brand`, which fills buttons,
+   * the navigation shell and anything that should read as "this institution".
+   * Keeping the two apart is what lets a green sidebar sit beside dark, legible
+   * body copy without either fighting the other.
+   */
+  --ink: #111827;
+  --ink-strong: #030712;
+  --ink-soft: #374151;
   --on-ink: #ffffff;
+
+  --brand: #15803d;
+  --brand-strong: #166534;
+  --brand-bright: #16a34a;
+  --brand-soft: #dcfce7;
+  --on-brand: #ffffff;
+  /* The navigation shell — deeper than `--brand` so an active item can be
+     brighter than the surface it sits on rather than darker. */
+  --brand-deep: #0b4a2f;
+  --brand-deep-line: rgba(255, 255, 255, 0.12);
+
   --seal: #b8862e;
   --seal-strong: #96701f;
   --on-seal: #ffffff;
@@ -99,8 +118,10 @@
 
   /* Stat-tile identity set — kept distinct from the warning/success pair
      above, which carry real state ("this is overdue"), never decoration. */
-  --stat-blue: var(--ink);
-  --stat-blue-container: var(--surface-sunken-strong);
+  /* A real blue, not an alias of `--ink` — `--ink` is now near-black slate, and
+     a "blue" tile that renders grey is worse than no colour at all. */
+  --stat-blue: #2563eb;
+  --stat-blue-container: #dbeafe;
   --stat-teal: var(--status-verified);
   --stat-teal-container: var(--status-verified-bg);
   --stat-amber: var(--status-pending);
@@ -201,10 +222,22 @@
   --border-strong: #3f3f3f;
   --scroll-shadow: rgba(255, 255, 255, 0.16);
 
-  --ink: #5d7ec4;
-  --ink-strong: #7195d6;
-  --ink-soft: #26365a;
-  --on-ink: #ffffff;
+  /* Headings and figures on a near-black surface — light slate, not green, for
+     the same reason `--ink` is slate in the light palette. */
+  --ink: #e5e7eb;
+  --ink-strong: #f9fafb;
+  --ink-soft: #374151;
+  --on-ink: #111827;
+
+  /* Green lifted for a dark surface: #15803d on near-black is too dim to read
+     as the brand, and white button text needs the fill to stay dark enough. */
+  --brand: #22a559;
+  --brand-strong: #2bb765;
+  --brand-bright: #34d399;
+  --brand-soft: #0f2e1d;
+  --on-brand: #ffffff;
+  --brand-deep: #08301f;
+  --brand-deep-line: rgba(255, 255, 255, 0.1);
 
   --seal: #caa053;
   --seal-strong: #e0b568;
@@ -234,6 +267,8 @@
   --stat-red-container: #3a1712;
   --stat-orange: #f0924a;
   --stat-orange-container: #3a2210;
+  --stat-blue: #6ea8fe;
+  --stat-blue-container: #14243d;
 
   /* Navy-tinted shadows read as murk once the surface behind them is dark
      already; plain black at higher opacity is what actually reads as
@@ -253,7 +288,7 @@
 [data-theme="dark"] .button.primary,
 [data-theme="dark"] .avatar,
 [data-theme="dark"] .splash__brand {
-  background: #2f4a80;
+  background: var(--brand);
 }
 
 [data-theme="dark"] button.secondary,
@@ -1159,8 +1194,8 @@ button,
   padding: 10px 18px;
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--brand);
+  color: var(--on-brand);
   cursor: pointer;
   /* `.button` is also used on `<a>` (a `<Link>` styled as a button, e.g. the
      dashboard quick links) — a plain `<button>` never has an underline to
@@ -1172,7 +1207,7 @@ button,
 }
 
 button:hover:not(:disabled) {
-  background: var(--ink-strong);
+  background: var(--brand-strong);
 }
 
 button:active:not(:disabled) {
@@ -1189,13 +1224,13 @@ button:disabled {
    they render differently. */
 button.primary,
 .button.primary {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 button.primary:hover:not(:disabled),
 .button.primary:hover {
-  background: var(--ink-strong);
+  background: var(--brand-strong);
 }
 
 button.secondary,
@@ -1528,7 +1563,7 @@ tbody tr:last-child td {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--ink);
+  background: var(--brand);
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
@@ -1990,7 +2025,7 @@ tbody tr:last-child td {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--ink);
+  background: var(--brand);
   color: #ffffff;
   margin-bottom: var(--sp-4);
 }
@@ -2516,5 +2551,782 @@ button.menu__trigger:hover:not(:disabled) {
 
   .grid--stats .stat__foot {
     font-size: 0.6875rem;
+  }
+}
+
+/* ==================================================================== shell
+ *
+ * The navigation shell is a solid green panel with a green header above the
+ * content, per the University of Juba design. Everything in it is stated
+ * explicitly rather than inherited: these two surfaces are the one part of the
+ * app that does *not* follow the light/dark tokens, because the brand panel is
+ * green in both themes — so text on it is set here, once, in absolute colours.
+ */
+
+.sidebar {
+  background: var(--brand-deep);
+  border-right: none;
+}
+
+.sidebar__brand {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--brand-deep-line);
+  gap: var(--sp-3);
+}
+
+/* The crest sits on white — a coat of arms is printed artwork and loses its
+   detail on a coloured ground. */
+.sidebar__brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--brand-deep);
+}
+
+.sidebar__brand-name {
+  color: #ffffff;
+  font-size: 0.9375rem;
+}
+
+.sidebar__brand-sub {
+  color: rgba(255, 255, 255, 0.62);
+  /* The motto is three words joined by bullets — it only fits the panel at
+     this size, and truncating a motto looks like a bug rather than a choice. */
+  font-size: 0.5625rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sidebar__collapse-btn {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+button.sidebar__collapse-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.nav__section {
+  color: rgba(255, 255, 255, 0.45);
+  margin-left: var(--sp-4);
+}
+
+.nav__link {
+  color: rgba(255, 255, 255, 0.8);
+  border-left: none;
+  padding: 10px var(--sp-3);
+  margin-bottom: 3px;
+}
+
+.nav__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* Brighter than the panel, not darker — an active item should read as lit. */
+.nav__link[aria-current="page"] {
+  background: var(--brand-bright);
+  border-left-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.nav__link[aria-current="page"] svg {
+  color: #ffffff;
+}
+
+.sidebar__footer {
+  border-top: 1px solid var(--brand-deep-line);
+}
+
+/* The user chip in the sidebar footer sits on green too. */
+.sidebar__footer .menu__trigger,
+.sidebar__footer .menu__name {
+  color: #ffffff;
+}
+
+.sidebar__footer .menu__role,
+.sidebar__footer .menu__trigger svg {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+button.sidebar__footer-signout,
+.sidebar__footer button.menu__trigger:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ---- header ---- */
+
+.topbar {
+  background: var(--brand-deep);
+  border-bottom: none;
+  color: #ffffff;
+  gap: var(--sp-4);
+}
+
+.topbar__brand,
+.topbar__brand-name {
+  color: #ffffff;
+}
+
+.topbar__menu-btn {
+  color: #ffffff;
+}
+
+button.topbar__menu-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* The portal's own name, beside the product name — "which of these am I in". */
+.topbar__portal {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.topbar__portal:hover {
+  text-decoration: none;
+}
+
+.topbar__portal-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.topbar__portal-sub {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.topbar__notify {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+button.topbar__notify:hover:not(:disabled),
+a.topbar__notify:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.topbar__notify-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--stat-red);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar__label {
+  display: inline;
+}
+
+/* The signed-in identity, mirrored from the sidebar footer so the header is
+   self-sufficient on a phone where the sidebar is a closed drawer. */
+.topbar__user .menu__trigger,
+.topbar__user .menu__name {
+  color: #ffffff;
+}
+
+.topbar__user .menu__role,
+.topbar__user .menu__trigger svg {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.topbar__user button.menu__trigger:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.topbar__user .avatar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 860px) {
+  .topbar__portal-sub {
+    display: none;
+  }
+  .topbar__label {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar__user .menu__name {
+    display: none;
+  }
+}
+
+/* ======================================================= portal dashboards
+ *
+ * The card vocabulary from the University of Juba design: a figure card whose
+ * icon sits in a soft square tile, a timeline for the day's classes, a
+ * notification list, an icon grid, and a two-column detail table.
+ */
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.figure__tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-1);
+}
+
+.figure__tile--green {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.figure__tile--red {
+  background: var(--stat-red-container);
+  color: var(--stat-red);
+}
+.figure__tile--blue {
+  background: var(--stat-blue-container);
+  color: var(--stat-blue);
+}
+.figure__tile--amber {
+  background: var(--stat-orange-container);
+  color: var(--stat-orange);
+}
+
+.figure__label {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.figure__value {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.figure__value--green {
+  color: var(--brand);
+}
+.figure__value--red {
+  color: var(--stat-red);
+}
+
+.figure__meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* These read as affordances, not prose links — the arrow already marks them,
+   so an underline only adds noise to a card full of figures. */
+.figure__link,
+.panel__link,
+.actioncard__link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.figure__link:hover,
+.panel__link:hover,
+.actioncard__link:hover {
+  text-decoration: underline;
+}
+
+.figure__link {
+  margin-top: auto;
+}
+
+/* ---- the student's own identity chip ---- */
+
+.idchip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.idchip__label {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.idchip__value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ---- a panel with its own header and a link to the full view ---- */
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.panel__head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panel__link {
+  white-space: nowrap;
+}
+
+/* ---- today's classes, as a timeline ---- */
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.timeline__item {
+  position: relative;
+  padding-left: var(--sp-5);
+}
+
+/* The dot, and the line joining it to the next one. Drawn on the item rather
+   than as separate elements so a single list stays a single list. */
+.timeline__item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.timeline__item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 16px;
+  bottom: calc(var(--sp-5) * -1);
+  width: 1px;
+  background: var(--border);
+}
+
+.timeline__item.is-past::before {
+  background: var(--border-strong);
+}
+
+.timeline__time {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.timeline__item.is-past .timeline__time {
+  color: var(--muted);
+}
+
+.timeline__title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-top: 2px;
+}
+
+.timeline__meta {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+/* ---- notifications ---- */
+
+.notifs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.notifs__item {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.notifs__tile {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.notifs__tile--red {
+  background: var(--stat-red-container);
+  color: var(--stat-red);
+}
+.notifs__tile--blue {
+  background: var(--stat-blue-container);
+  color: var(--stat-blue);
+}
+
+.notifs__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.notifs__title {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.notifs__text {
+  font-size: 0.8125rem;
+  color: var(--muted-strong);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notifs__when {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+/* ---- quick access: an icon grid ---- */
+
+.quickgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--sp-3);
+}
+
+.quickgrid__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-2);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text);
+  text-align: center;
+  transition: background var(--fast) var(--ease);
+}
+
+.quickgrid__item:hover {
+  background: var(--surface-sunken);
+  text-decoration: none;
+}
+
+.quickgrid__tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.quickgrid__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* ---- a two-column detail table ---- */
+
+.detail {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.detail th,
+.detail td {
+  text-align: left;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail tr:last-child th,
+.detail tr:last-child td {
+  border-bottom: none;
+}
+
+/* A detail table's row labels are sentence-case prose, not column headings —
+   so the global `th` treatment (uppercase, tracked out, tiny) is undone here
+   rather than inherited. */
+.detail th {
+  font-weight: 500;
+  color: var(--muted);
+  width: 45%;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
+  background: transparent;
+}
+
+.detail td {
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+
+.detail td.is-red {
+  color: var(--stat-red);
+}
+
+.detail td.is-green {
+  color: var(--brand);
+}
+
+/* Two panels side by side on desktop, stacked on anything narrower. */
+.duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
+/* Two panels of prose and tables do not fit side by side below this, and a
+   fixed `1fr 1fr` here is what pushes the second column off a phone screen. */
+@media (max-width: 980px) {
+  .duo {
+    grid-template-columns: 1fr;
+  }
+}
+
+.duo > .card {
+  margin-bottom: 0;
+}
+
+/* ---- the applicant portal's progress stepper ---- */
+
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.stepper__step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-2);
+  position: relative;
+  min-width: 0;
+}
+
+/* The joining rail runs from this step's dot to the next one's. */
+.stepper__step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 18px);
+  right: calc(-50% + 18px);
+  height: 2px;
+  background: var(--border);
+}
+
+.stepper__step.is-done:not(:last-child)::after {
+  background: var(--brand);
+}
+
+.stepper__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-sunken-strong);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.stepper__step.is-done .stepper__dot {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.stepper__step.is-current .stepper__dot {
+  background: var(--stat-orange);
+  color: #ffffff;
+}
+
+/* Label above date, always — as two inline spans they run together into
+   "Account CreatedAug 22". */
+.stepper__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.stepper__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.stepper__when {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+/* ---- action cards (the applicant's "what to do next" row) ---- */
+
+.actioncard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  height: 100%;
+}
+
+.actioncard__title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.actioncard__text {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  flex: 1;
+}
+
+.actioncard__link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* ---- the assistance banner ---- */
+
+.assist {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  background: var(--brand-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--gap);
+}
+
+.assist__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.assist__body h2 {
+  margin: 0 0 var(--sp-1);
+  font-size: 1rem;
+}
+
+.assist__body p {
+  margin: 0 0 var(--sp-4);
+  font-size: 0.875rem;
+  color: var(--muted-strong);
+}
+
+.assist__mark {
+  flex-shrink: 0;
+  color: var(--brand);
+  opacity: 0.5;
+}
+
+@media (max-width: 720px) {
+  .assist__mark {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Five labelled steps cannot share one phone width; stacking them keeps each
+     one's date readable, which is the part an applicant is checking. */
+  .stepper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-4);
+  }
+  .stepper__step {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: var(--sp-3);
+  }
+  .stepper__step:not(:last-child)::after {
+    top: 30px;
+    bottom: calc(var(--sp-4) * -1);
+    left: 13px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+  .stepper__body {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .quickgrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .figure__value {
+    font-size: 1.25rem;
+  }
+  .assist {
+    padding: var(--sp-4);
   }
 }

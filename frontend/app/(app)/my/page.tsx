@@ -18,13 +18,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { CountUp } from "@/components/CountUp";
 import {
   AlertCircleIcon,
+  BarChartIcon,
   CalendarIcon,
   CheckCircleIcon,
   ClockIcon,
   CreditCardIcon,
+  FileTextIcon,
   LayersIcon,
   MegaphoneIcon,
   UserPlusIcon,
@@ -273,18 +274,31 @@ export default function StudentDashboardPage() {
 
   const firstName = student?.full_name.split(" ")[0] ?? "";
 
+
+  const QUICK_ACCESS = [
+    { href: "/my/courses", label: "Register Courses", icon: UserPlusIcon },
+    { href: "/my/timetable", label: "View Timetable", icon: CalendarIcon },
+    { href: "/my/finance", label: "Fees Statement", icon: CreditCardIcon },
+    { href: "/my/results", label: "View Results", icon: LayersIcon },
+    { href: "/documents", label: "My Documents", icon: FileTextIcon },
+    { href: "/my/attendance", label: "Attendance", icon: ClockIcon },
+  ];
+
   return (
     <>
+      {/* ------------------------------------------------------- greeting */}
       <div className="page-header">
         <div>
-          <h1>{firstName ? `Hello, ${firstName}` : "My portal"}</h1>
+          <h1>Welcome back, {firstName || "student"} 👋</h1>
           <p className="page-subtitle">
-            {semester ? `${semester.name} · your standing right now` : "Your standing at a glance"}
+            {student?.programme_name ?? "Your programme"}
+            {semester ? ` · Year ${student?.current_level ?? 1} · ${semester.name}` : ""}
           </p>
         </div>
-        {semester ? (
-          <span className={`pill ${registrationOpen ? "pill--synced" : ""}`}>
-            {registrationOpen ? "Registration open" : addDropOpen ? "Add/drop open" : "Registration closed"}
+        {student ? (
+          <span className="idchip">
+            <span className="idchip__label">Student ID</span>
+            <span className="idchip__value">{student.student_id}</span>
           </span>
         ) : null}
       </div>
@@ -295,7 +309,9 @@ export default function StudentDashboardPage() {
         </div>
       ) : null}
 
-      {/* ---------------------------------------------- what needs doing */}
+      {/* --------------------------------------------- what needs doing
+        * Not in the reference design, but kept: it is the one part of this page
+        * that changes with the student's situation rather than restating it. */}
       {loaded && actions.length > 0 ? (
         <section className="attention">
           <div className="attention__head">
@@ -316,208 +332,291 @@ export default function StudentDashboardPage() {
         </section>
       ) : null}
 
-      {loaded && actions.length === 0 ? (
-        <div className="attention attention--clear">
-          <div className="attention__head">
-            <CheckCircleIcon size={16} />
-            <h2>You&rsquo;re all caught up</h2>
-          </div>
-          <p className="attention__clear-text">
-            Nothing outstanding — no fees owing, no attendance warnings and no holds on your record.
-          </p>
-        </div>
-      ) : null}
-
-      {/* ---------------------------------------------------- at a glance */}
+      {/* --------------------------------------------------------- figures */}
       <div className="grid grid--stats">
-        <div className="card stat stat--accent-blue">
-          <div className="stat__top">
-            <span className="stat__label">Registered courses</span>
-            <span className="stat__icon">
-              <UserPlusIcon size={18} />
-            </span>
-          </div>
-          <div className="stat__value">{loaded ? <CountUp value={registrations.length} duration={500} /> : "…"}</div>
-          <div className="stat__foot">{credits} credit hours this semester</div>
+        <div className="card figure">
+          <span className="figure__tile figure__tile--green">
+            <CheckCircleIcon size={20} />
+          </span>
+          <span className="figure__label">Registration Status</span>
+          <span className={`figure__value ${registrations.length > 0 ? "figure__value--green" : ""}`}>
+            {!loaded ? "…" : registrations.length > 0 ? "Registered" : "Not registered"}
+          </span>
+          <span className="figure__meta">{semester ? semester.name : "No open semester"}</span>
+          <Link href="/my/courses" className="figure__link">
+            View Courses →
+          </Link>
         </div>
 
-        <div className="card stat stat--accent-amber">
-          <div className="stat__top">
-            <span className="stat__label">Cumulative GPA</span>
-            <span className="stat__icon">
-              <LayersIcon size={18} />
-            </span>
-          </div>
-          <div className="stat__value">{loaded ? (resultsPublished ? gpa ?? "—" : "—") : "…"}</div>
-          <div className="stat__foot">
-            {loaded && !resultsPublished ? "Not published for this semester yet" : "Across published results"}
-          </div>
-        </div>
-
-        <div className={`card stat stat--accent-${owing ? "red" : "teal"}`}>
-          <div className="stat__top">
-            <span className="stat__label">Fee balance</span>
-            <span className="stat__icon">
-              <CreditCardIcon size={18} />
-            </span>
-          </div>
-          <div className="stat__value">
-            {!loaded || balance === null ? (
-              "…"
-            ) : owing ? (
-              <>
-                <CountUp value={Number(balance)} /> <span className="stat__unit">{currency}</span>
-              </>
-            ) : (
-              "Clear"
-            )}
-          </div>
-          <div className="stat__foot">{owing ? "Payable at the finance office" : "Nothing owed"}</div>
-        </div>
-
-        <div className={`card stat stat--accent-${atRisk.length > 0 ? "orange" : "teal"}`}>
-          <div className="stat__top">
-            <span className="stat__label">Exam eligibility</span>
-            <span className="stat__icon">
-              <ClockIcon size={18} />
-            </span>
-          </div>
-          <div className="stat__value" style={{ fontSize: "1.5rem" }}>
-            {!loaded
+        <div className="card figure">
+          <span className="figure__tile figure__tile--red">
+            <CreditCardIcon size={20} />
+          </span>
+          <span className="figure__label">Outstanding Fees</span>
+          <span className={`figure__value ${owing ? "figure__value--red" : "figure__value--green"}`}>
+            {!loaded || balance === null
               ? "…"
-              : registrations.length === 0
-                ? "—"
-                : atRisk.length === 0
-                  ? "On track"
-                  : `${atRisk.length} at risk`}
-          </div>
-          <div className="stat__foot">
-            {registrations.length === 0 ? "No courses registered" : "Based on attendance so far"}
-          </div>
+              : owing
+                ? `${currency} ${Number(balance).toLocaleString()}`
+                : "Cleared"}
+          </span>
+          <span className="figure__meta">{owing ? "Balance pending" : "Nothing owed"}</span>
+          <Link href="/my/finance" className="figure__link">
+            {owing ? "Make Payment →" : "View statement →"}
+          </Link>
+        </div>
+
+        <div className="card figure">
+          <span className="figure__tile figure__tile--blue">
+            <CalendarIcon size={20} />
+          </span>
+          <span className="figure__label">Current Semester</span>
+          <span className="figure__value">{semester ? semester.name : "—"}</span>
+          <span className="figure__meta">{credits} credit units registered</span>
+          <Link href="/my/timetable" className="figure__link">
+            View Timetable →
+          </Link>
+        </div>
+
+        <div className="card figure">
+          <span className="figure__tile figure__tile--amber">
+            <BarChartIcon size={20} />
+          </span>
+          <span className="figure__label">Academic Progress</span>
+          <span className="figure__value">
+            {!loaded ? "…" : resultsPublished ? (gpa ?? "—") : "—"}
+          </span>
+          <span className="figure__meta">
+            {loaded && !resultsPublished ? "GPA pending publication" : "Cumulative GPA"}
+          </span>
+          <Link href="/my/results" className="figure__link">
+            View Progress →
+          </Link>
         </div>
       </div>
 
-      {/* -------------------------------------------------- today's classes */}
-      {semester ? (
-        <>
-          <div className="section-title">
-            <CalendarIcon size={14} /> {DAY_LABELS[todayIndex()]}&rsquo;s classes
+      {/* ------------------------------- today's classes + notifications */}
+      <div className="duo">
+        <div className="card">
+          <div className="panel__head">
+            <h2>Today&rsquo;s Classes</h2>
+            <Link href="/my/timetable" className="panel__link">
+              View Timetable →
+            </Link>
           </div>
-          <div className="card">
-            {!loaded ? (
-              <p className="muted">Loading…</p>
-            ) : todaysClasses.length === 0 ? (
-              <div className="empty-state">
-                <span className="empty-state__title">No classes scheduled today</span>
-                <p className="muted">
-                  {classes.length > 0 ? (
-                    <Link href="/my/timetable">See your full week →</Link>
-                  ) : (
-                    "Nothing on your timetable for this semester yet."
-                  )}
-                </p>
-              </div>
-            ) : (
-              <ul className="daylist">
-                {todaysClasses.map((entry) => {
-                  const isNext = nextClass?.id === entry.id;
-                  return (
-                    <li key={entry.id} className={`daylist__item ${isNext ? "is-next" : ""}`}>
-                      <span className="daylist__time">
-                        {hhmm(entry.start_time)}
-                        <span className="daylist__time-end">{hhmm(entry.end_time)}</span>
-                      </span>
-                      <span className="daylist__body">
-                        <span className="daylist__course">
-                          {entry.course_code} — {entry.course_title}
-                        </span>
-                        <span className="daylist__meta">
-                          {entry.room_code || "Room TBC"}
-                          {entry.lecturer_name ? ` · ${entry.lecturer_name}` : ""}
-                        </span>
-                      </span>
-                      {isNext ? <span className="daylist__badge">Next</span> : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </>
-      ) : null}
-
-      {/* ------------------------------------------------------- my courses */}
-      {registrations.length > 0 ? (
-        <>
-          <div className="section-title">This semester&rsquo;s courses</div>
-          <div className="card">
-            <ul className="courselist">
-              {registrations.map((registration) => {
-                const elig = eligibility[registration.id];
-                const percent = elig?.percentage !== null && elig?.percentage !== undefined ? Number(elig.percentage) : null;
-                const threshold = elig ? Number(elig.threshold) : null;
-                const tone =
-                  percent === null || threshold === null
-                    ? "none"
-                    : elig?.waived
-                      ? "waived"
-                      : percent >= threshold
-                        ? "ok"
-                        : percent >= threshold - 10
-                          ? "warn"
-                          : "bad";
+          {!loaded ? (
+            <p className="muted">Loading…</p>
+          ) : todaysClasses.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-state__title">No classes scheduled today</span>
+              <p className="muted">
+                {classes.length > 0
+                  ? "Check your timetable for the rest of the week."
+                  : "Nothing on your timetable for this semester yet."}
+              </p>
+            </div>
+          ) : (
+            <ul className="timeline">
+              {todaysClasses.map((entry) => {
+                const past = !nextClass || entry.end_time < nextClass.start_time;
                 return (
-                  <li key={registration.id} className="courselist__item">
-                    <div className="courselist__head">
-                      <span className="courselist__code">{registration.course_code}</span>
-                      <span className="courselist__title">{registration.course_title}</span>
-                      <span className="courselist__credits">{registration.credit_hours} cr</span>
+                  <li key={entry.id} className={`timeline__item ${past && nextClass?.id !== entry.id ? "is-past" : ""}`}>
+                    <div className="timeline__time">
+                      {hhmm(entry.start_time)} – {hhmm(entry.end_time)}
                     </div>
-                    <div className="courselist__meter" role="img" aria-label={
-                      percent === null ? "No attendance recorded yet" : `Attendance ${percent}%`
-                    }>
-                      <span className={`courselist__fill courselist__fill--${tone}`} style={{ width: `${percent ?? 0}%` }} />
-                    </div>
-                    <div className="courselist__foot">
-                      {percent === null ? (
-                        <span className="muted">No attendance recorded yet</span>
-                      ) : (
-                        <>
-                          <span className={`courselist__pct courselist__pct--${tone}`}>{percent}% attended</span>
-                          {threshold !== null ? <span className="muted">{threshold}% required</span> : null}
-                          {elig?.waived ? <span className="pill pill--info">Waived</span> : null}
-                        </>
-                      )}
+                    <div className="timeline__title">{entry.course_title}</div>
+                    <div className="timeline__meta">
+                      {entry.course_code}
+                      {entry.room_code ? ` · ${entry.room_code}` : ""}
+                      {entry.lecturer_name ? ` · ${entry.lecturer_name}` : ""}
                     </div>
                   </li>
                 );
               })}
             </ul>
-          </div>
-        </>
-      ) : null}
+          )}
+        </div>
 
-      {/* ---------------------------------------------------------- notices */}
-      {notices.length > 0 ? (
-        <>
-          <div className="section-title">
-            <MegaphoneIcon size={14} /> Latest notices
+        <div className="card">
+          <div className="panel__head">
+            <h2>Recent Notifications</h2>
+            <Link href="/communications" className="panel__link">
+              View All →
+            </Link>
           </div>
-          <div className="card">
-            <ul className="noticelist">
-              {notices.map((notice) => (
-                <li key={notice.id} className="noticelist__item">
-                  <span className="noticelist__title">{notice.title}</span>
-                  <span className="noticelist__body">{notice.body}</span>
-                  <span className="noticelist__date">{new Date(notice.sent_at).toLocaleDateString()}</span>
+          {notices.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-state__title">No notices yet</span>
+            </div>
+          ) : (
+            <ul className="notifs">
+              {notices.map((notice, index) => (
+                <li key={notice.id} className="notifs__item">
+                  <span
+                    className={`notifs__tile ${
+                      index % 3 === 1 ? "notifs__tile--red" : index % 3 === 2 ? "notifs__tile--blue" : ""
+                    }`}
+                  >
+                    <MegaphoneIcon size={15} />
+                  </span>
+                  <span className="notifs__body">
+                    <span className="notifs__title">{notice.title}</span>
+                    <span className="notifs__text">{notice.body}</span>
+                    <span className="notifs__when">{new Date(notice.sent_at).toLocaleDateString()}</span>
+                  </span>
                 </li>
               ))}
             </ul>
-            <Link href="/communications" className="text-sm">
-              All announcements →
+          )}
+        </div>
+      </div>
+
+      {/* ---------------------------------------------------- quick access */}
+      <div className="card">
+        <div className="panel__head">
+          <h2>Quick Access</h2>
+        </div>
+        <div className="quickgrid">
+          {QUICK_ACCESS.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className="quickgrid__item">
+              <span className="quickgrid__tile">
+                <Icon size={20} />
+              </span>
+              <span className="quickgrid__label">{label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ------------------------------ semester overview + fee summary */}
+      <div className="duo">
+        <div className="card">
+          <div className="panel__head">
+            <h2>Semester Overview</h2>
+          </div>
+          <table className="detail">
+            <tbody>
+              <tr>
+                <th scope="row">Semester</th>
+                <td>{semester ? semester.name : "—"}</td>
+              </tr>
+              <tr>
+                <th scope="row">Programme</th>
+                <td>{student?.programme_code ?? "—"}</td>
+              </tr>
+              <tr>
+                <th scope="row">Level</th>
+                <td>Year {student?.current_level ?? "—"}</td>
+              </tr>
+              <tr>
+                <th scope="row">Registered courses</th>
+                <td>{registrations.length}</td>
+              </tr>
+              <tr>
+                <th scope="row">Credit units</th>
+                <td>{credits}</td>
+              </tr>
+              <tr>
+                <th scope="row">Registration</th>
+                <td className={registrationOpen ? "is-green" : ""}>
+                  {registrationOpen ? "Open" : addDropOpen ? "Add/drop open" : "Closed"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="card">
+          <div className="panel__head">
+            <h2>Fee Summary</h2>
+            <Link href="/my/finance" className="panel__link">
+              View Statement →
             </Link>
           </div>
-        </>
+          <table className="detail">
+            <tbody>
+              <tr>
+                <th scope="row">Currency</th>
+                <td>{currency}</td>
+              </tr>
+              <tr>
+                <th scope="row">Outstanding balance</th>
+                <td className={owing ? "is-red" : "is-green"}>
+                  {balance === null ? "—" : `${currency} ${Number(balance).toLocaleString()}`}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Clearance</th>
+                <td className={holds.length === 0 ? "is-green" : "is-red"}>
+                  {!loaded ? "—" : holds.length === 0 ? "Clear" : `${holds.length} hold(s)`}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <Link href="/my/finance" className="button primary block" style={{ marginTop: "var(--sp-4)" }}>
+            {owing ? "Make Payment" : "View Statement"}
+          </Link>
+        </div>
+      </div>
+
+      {/* ------------------------------------- attendance per course */}
+      {registrations.length > 0 ? (
+        <div className="card">
+          <div className="panel__head">
+            <h2>Attendance by course</h2>
+            <Link href="/my/attendance" className="panel__link">
+              Full record →
+            </Link>
+          </div>
+          <ul className="courselist">
+            {registrations.map((registration) => {
+              const elig = eligibility[registration.id];
+              const percent =
+                elig?.percentage !== null && elig?.percentage !== undefined ? Number(elig.percentage) : null;
+              const threshold = elig ? Number(elig.threshold) : null;
+              const tone =
+                percent === null || threshold === null
+                  ? "none"
+                  : elig?.waived
+                    ? "waived"
+                    : percent >= threshold
+                      ? "ok"
+                      : percent >= threshold - 10
+                        ? "warn"
+                        : "bad";
+              return (
+                <li key={registration.id} className="courselist__item">
+                  <div className="courselist__head">
+                    <span className="courselist__code">{registration.course_code}</span>
+                    <span className="courselist__title">{registration.course_title}</span>
+                    <span className="courselist__credits">{registration.credit_hours} cr</span>
+                  </div>
+                  <div
+                    className="courselist__meter"
+                    role="img"
+                    aria-label={percent === null ? "No attendance recorded yet" : `Attendance ${percent}%`}
+                  >
+                    <span
+                      className={`courselist__fill courselist__fill--${tone}`}
+                      style={{ width: `${percent ?? 0}%` }}
+                    />
+                  </div>
+                  <div className="courselist__foot">
+                    {percent === null ? (
+                      <span className="muted">No attendance recorded yet</span>
+                    ) : (
+                      <>
+                        <span className={`courselist__pct courselist__pct--${tone}`}>{percent}% attended</span>
+                        {threshold !== null ? <span className="muted">{threshold}% required</span> : null}
+                        {elig?.waived ? <span className="pill pill--info">Waived</span> : null}
+                      </>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : null}
     </>
   );

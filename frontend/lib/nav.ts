@@ -58,10 +58,22 @@ export const NAV: NavItem[] = [
     label: "Dashboard",
     icon: DashboardIcon,
     permission: null,
-    // "My portal" is the student's dashboard; `/dashboard` redirects them there,
-    // so listing both would be one link too many pointing at one page.
-    hiddenFor: ["student"],
+    // Each of these has its own home — `/my` for a student, `/apply` for an
+    // applicant — so listing the staff dashboard as well would be one link too
+    // many pointing somewhere they have no use for.
+    hiddenFor: ["student", "applicant"],
     section: "Overview",
+  },
+
+  // ----------------------------------------------------------- applicant
+  {
+    href: "/apply",
+    label: "My Application",
+    icon: FileTextIcon,
+    permission: null,
+    roles: ["applicant"],
+    section: "Application",
+    description: "Track and manage your admission application.",
   },
 
   // ------------------------------------------------------------- student
@@ -155,6 +167,7 @@ export const NAV: NavItem[] = [
     label: "Admissions",
     icon: UserPlusIcon,
     permission: "admissions.view_application",
+    hiddenFor: ["applicant"],
     section: "Registry",
     description: "Applications, review, merit lists and offers.",
   },
@@ -181,6 +194,7 @@ export const NAV: NavItem[] = [
     label: "Library",
     icon: BookOpenIcon,
     permission: null,
+    hiddenFor: ["applicant"],
     section: "Campus",
     description: "Browse the catalogue and your loans.",
   },
@@ -189,6 +203,7 @@ export const NAV: NavItem[] = [
     label: "Hostel",
     icon: BedIcon,
     permission: null,
+    hiddenFor: ["applicant"],
     section: "Campus",
     description: "Room allocation and occupancy.",
   },
@@ -197,6 +212,7 @@ export const NAV: NavItem[] = [
     label: "Documents",
     icon: FileTextIcon,
     permission: null,
+    hiddenFor: ["applicant"],
     section: "Campus",
     description: "Transcript requests and issued certificates.",
   },

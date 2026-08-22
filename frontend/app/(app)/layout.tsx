@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { UserMenu } from "@/components/UserMenu";
 import {
+  BellIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   GraduationCapIcon,
@@ -25,6 +26,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [queued, setQueued] = useState(0);
+  const [noticeCount, setNoticeCount] = useState(0);
   const [studentPhoto, setStudentPhoto] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,6 +34,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, [user, loading, router]);
 
   const isStudent = hasRole("student");
+  const isApplicant = hasRole("applicant");
+
+  /** Which portal this is, shown beside the product name in the header. */
+  const portalName = isApplicant
+    ? "Application Portal"
+    : isStudent
+      ? "Student Portal"
+      : "Staff Portal";
+  const home = isApplicant ? "/apply" : isStudent ? "/my" : "/dashboard";
+
   useEffect(() => {
     if (!isStudent) return;
     api
@@ -39,6 +51,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       .then((student) => setStudentPhoto(student?.photo ?? null))
       .catch(() => undefined);
   }, [isStudent]);
+
+  // The badge counts announcements this account can actually see. There is no
+  // per-user read state in the backend, so this is "notices addressed to you",
+  // not "unread" — inventing an unread count would be worse than counting what
+  // is really there.
+  useEffect(() => {
+    api
+      .announcements("?page_size=1")
+      .then((page) => setNoticeCount(page.count))
+      .catch(() => undefined);
+  }, []);
 
   // Close the mobile drawer on navigation, so a link tap doesn't leave it open
   // over the next page.
@@ -74,13 +97,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <aside className={`sidebar ${navOpen ? "is-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
         <div className="sidebar__brand">
-          <Link href="/dashboard" className="sidebar__brand-link">
+          <Link href={home} className="sidebar__brand-link">
             <span className="sidebar__brand-mark">
-              <GraduationCapIcon size={18} />
+              <GraduationCapIcon size={20} />
             </span>
             <span className="sidebar__brand-text">
-              <span className="sidebar__brand-name">UniACMIS</span>
-              <span className="sidebar__brand-sub">Academic Management</span>
+              <span className="sidebar__brand-name">University of Juba</span>
+              <span className="sidebar__brand-sub">Advance • Transform • Excel</span>
             </span>
           </Link>
           <button
@@ -144,17 +167,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {navOpen ? <XIcon /> : <MenuIcon />}
           </button>
 
-          <Link href="/dashboard" className="topbar__brand">
-            <span className="topbar__brand-mark">
-              <GraduationCapIcon size={16} />
-            </span>
-            UniACMIS
+          <Link href={home} className="topbar__portal">
+            <span className="topbar__portal-name">ACMIS</span>
+            <span className="topbar__portal-sub">{portalName}</span>
           </Link>
 
           <span className="topbar__spacer" />
 
           <div className="topbar__actions">
             <ConnectionStatus />
+            <Link href="/communications" className="topbar__notify">
+              <BellIcon size={18} />
+              <span className="topbar__label">Notifications</span>
+              {noticeCount > 0 ? <span className="topbar__notify-count">{noticeCount}</span> : null}
+            </Link>
+            <span className="topbar__user">
+              <UserMenu
+                user={user}
+                photoUrl={studentPhoto}
+                onSignOut={() => void signOut().then(() => router.replace("/login"))}
+              />
+            </span>
           </div>
         </header>
 

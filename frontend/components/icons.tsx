@@ -314,6 +314,15 @@ export function PhoneIcon({ size = 18, ...props }: IconProps) {
   );
 }
 
+export function BellIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <path d="M18 8.5a6 6 0 0 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5" />
+      <path d="M10.3 19a2 2 0 0 0 3.4 0" />
+    </svg>
+  );
+}
+
 export function MailIcon({ size = 18, ...props }: IconProps) {
   return (
     <svg {...base(size)} {...props}>

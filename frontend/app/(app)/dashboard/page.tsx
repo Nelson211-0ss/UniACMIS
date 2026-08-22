@@ -66,12 +66,14 @@ export default function DashboardPage() {
   const { user, can, hasRole } = useAuth();
   const isStudent = hasRole("student");
 
-  // A student's dashboard is `/my` — it carries their standing, deadlines and
-  // classes. Keeping a second one here would mean two homes showing the same
-  // few facts, with the "explore" grid below repeating their sidebar verbatim.
+  // A student's dashboard is `/my` and an applicant's is `/apply` — each
+  // carries what that role actually came for. Keeping a staff dashboard here as
+  // well would mean two homes, the second one showing them nothing they can use.
+  const isApplicant = hasRole("applicant");
   useEffect(() => {
     if (isStudent) router.replace("/my");
-  }, [isStudent, router]);
+    else if (isApplicant) router.replace("/apply");
+  }, [isStudent, isApplicant, router]);
   const isFinanceStaff = hasRole("finance");
   const isLibraryStaff = hasRole("library");
   const isHrStaff = hasRole("hr");
