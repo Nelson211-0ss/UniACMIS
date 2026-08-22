@@ -101,6 +101,39 @@ def test_seed_roles_applies_newly_available_permissions_on_a_later_run(roles):
     assert registrar.group.permissions.filter(codename="add_student").exists()
 
 
+def test_seed_roles_reports_unchanged_when_nothing_changed(roles):
+    """The verb printed for each role must reflect whether its permissions
+    actually changed, not just whether the `Role` row already existed —
+    otherwise every ordinary redeploy prints "updated" for every role
+    forever, which defeats the point of the message for anyone reading
+    deploy logs."""
+    from io import StringIO
+
+    out = StringIO()
+    call_command("seed_roles", stdout=out)
+
+    assert "unchanged" in out.getvalue()
+    assert "updated" not in out.getvalue()
+
+
+def test_seed_roles_reports_updated_only_for_the_role_that_actually_changed(roles):
+    from io import StringIO
+
+    registrar = Role.objects.get(code="registrar")
+    permission = registrar.group.permissions.get(codename="add_student")
+    registrar.group.permissions.remove(permission)
+
+    out = StringIO()
+    call_command("seed_roles", stdout=out)
+    lines = out.getvalue().splitlines()
+
+    registrar_line = next(line for line in lines if line.strip().startswith("registrar"))
+    finance_line = next(line for line in lines if line.strip().startswith("finance"))
+
+    assert "updated" in registrar_line
+    assert "unchanged" in finance_line
+
+
 def test_prune_removes_permissions_the_policy_no_longer_lists(roles):
     """`--prune` is the corrective run: it makes the database match roles.py
     exactly, including taking away a permission granted by hand."""

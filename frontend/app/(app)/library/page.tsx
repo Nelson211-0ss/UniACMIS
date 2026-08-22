@@ -183,6 +183,11 @@ export default function LibraryPage() {
           <span>No connection. Showing whatever loaded earlier on this device.</span>
         </div>
       ) : null}
+      {state === "error" ? (
+        <div className="alert alert--error">
+          <span>Could not load the library. Try again shortly.</span>
+        </div>
+      ) : null}
 
       {loans.length > 0 ? (
         <div className="grid--split">

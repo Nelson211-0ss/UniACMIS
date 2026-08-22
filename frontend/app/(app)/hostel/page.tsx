@@ -32,6 +32,7 @@ interface Allocation {
 
 export default function HostelPage() {
   const { can } = useAuth();
+  const canViewRooms = can("hostel.view_room");
   const canManageRooms = can("hostel.add_room");
   const canAllocate = can("hostel.add_allocation");
   const canVacate = can("hostel.change_allocation");
@@ -55,8 +56,11 @@ export default function HostelPage() {
   async function load() {
     try {
       const [roomPage, allocationPage] = await Promise.all([
-        api.rooms(),
-        api.allocations().catch(() => ({ results: [] as Allocation[] })),
+        // The room inventory is a staff concern (FR-HOS-01…03) — a student
+        // sees only their own allocation below, so this is skipped rather
+        // than fetched and 403ing for them.
+        canViewRooms ? api.rooms() : Promise.resolve({ results: [] as Room[] }),
+        api.allocations(),
       ]);
       setRooms(roomPage.results);
       setAllocations(allocationPage.results);
@@ -144,6 +148,11 @@ export default function HostelPage() {
           <span>No connection. Showing whatever loaded earlier on this device.</span>
         </div>
       ) : null}
+      {state === "error" ? (
+        <div className="alert alert--error">
+          <span>Could not load the hostel records. Try again shortly.</span>
+        </div>
+      ) : null}
 
       {canManageRooms ? (
         <div className="card">
@@ -180,92 +189,96 @@ export default function HostelPage() {
         </div>
       ) : null}
 
-      <div className="grid">
-        <div className="card stat stat--accent-blue">
-          <div className="stat__top">
-            <span className="stat__label">Rooms</span>
-            <span className="stat__icon">
-              <BedIcon size={18} />
-            </span>
+      {canViewRooms ? (
+        <>
+          <div className="grid">
+            <div className="card stat stat--accent-blue">
+              <div className="stat__top">
+                <span className="stat__label">Rooms</span>
+                <span className="stat__icon">
+                  <BedIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{rooms.length}</div>
+            </div>
+            <div className="card stat stat--accent-teal">
+              <div className="stat__top">
+                <span className="stat__label">Available beds</span>
+                <span className="stat__icon">
+                  <BedIcon size={18} />
+                </span>
+              </div>
+              <div className="stat__value">{rooms.reduce((sum, room) => sum + room.available_beds, 0)}</div>
+            </div>
           </div>
-          <div className="stat__value">{rooms.length}</div>
-        </div>
-        <div className="card stat stat--accent-teal">
-          <div className="stat__top">
-            <span className="stat__label">Available beds</span>
-            <span className="stat__icon">
-              <BedIcon size={18} />
-            </span>
-          </div>
-          <div className="stat__value">{rooms.reduce((sum, room) => sum + room.available_beds, 0)}</div>
-        </div>
-      </div>
 
-      <div className="section-title">Rooms</div>
-      <div className="card">
-        {state !== "loading" && rooms.length === 0 ? (
-          <div className="empty-state">
-            <span className="empty-state__title">No rooms yet</span>
+          <div className="section-title">Rooms</div>
+          <div className="card">
+            {state !== "loading" && rooms.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-state__title">No rooms yet</span>
+              </div>
+            ) : (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Room</th>
+                      <th>Restricted to</th>
+                      <th>Occupancy</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rooms.map((room) => (
+                      <tr key={room.id}>
+                        <td className="cell-primary">
+                          {room.building} {room.room_number}
+                        </td>
+                        <td style={{ textTransform: "capitalize" }}>{room.gender_restriction}</td>
+                        <td>
+                          <span className={`pill ${room.available_beds > 0 ? "pill--synced" : "pill--failed"}`}>
+                            {room.occupied_beds} / {room.capacity}
+                          </span>
+                        </td>
+                        <td>
+                          {canAllocate && room.available_beds > 0 ? (
+                            allocateRoomId === room.id ? (
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <input
+                                  value={allocateStudent}
+                                  onChange={(event) => setAllocateStudent(event.target.value)}
+                                  placeholder="Student ID"
+                                  style={{ width: 90 }}
+                                />
+                                <select value={allocateYear} onChange={(event) => setAllocateYear(event.target.value)}>
+                                  <option value="">Year</option>
+                                  {academicYears.map((year) => (
+                                    <option key={year.id} value={year.id}>
+                                      {year.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button type="button" className="sm" disabled={busy} onClick={() => void allocate()}>
+                                  Allocate
+                                </button>
+                              </div>
+                            ) : (
+                              <button type="button" className="sm secondary" onClick={() => setAllocateRoomId(room.id)}>
+                                Allocate
+                              </button>
+                            )
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Room</th>
-                  <th>Restricted to</th>
-                  <th>Occupancy</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {rooms.map((room) => (
-                  <tr key={room.id}>
-                    <td className="cell-primary">
-                      {room.building} {room.room_number}
-                    </td>
-                    <td style={{ textTransform: "capitalize" }}>{room.gender_restriction}</td>
-                    <td>
-                      <span className={`pill ${room.available_beds > 0 ? "pill--synced" : "pill--failed"}`}>
-                        {room.occupied_beds} / {room.capacity}
-                      </span>
-                    </td>
-                    <td>
-                      {canAllocate && room.available_beds > 0 ? (
-                        allocateRoomId === room.id ? (
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <input
-                              value={allocateStudent}
-                              onChange={(event) => setAllocateStudent(event.target.value)}
-                              placeholder="Student ID"
-                              style={{ width: 90 }}
-                            />
-                            <select value={allocateYear} onChange={(event) => setAllocateYear(event.target.value)}>
-                              <option value="">Year</option>
-                              {academicYears.map((year) => (
-                                <option key={year.id} value={year.id}>
-                                  {year.name}
-                                </option>
-                              ))}
-                            </select>
-                            <button type="button" className="sm" disabled={busy} onClick={() => void allocate()}>
-                              Allocate
-                            </button>
-                          </div>
-                        ) : (
-                          <button type="button" className="sm secondary" onClick={() => setAllocateRoomId(room.id)}>
-                            Allocate
-                          </button>
-                        )
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+        </>
+      ) : null}
 
       <div className="section-title">Allocations</div>
       <div className="card">

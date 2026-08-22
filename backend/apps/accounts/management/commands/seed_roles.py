@@ -67,17 +67,27 @@ class Command(BaseCommand):
                 else:
                     resolved.append(permission)
 
+            before_ids = set(group.permissions.values_list("pk", flat=True))
+            resolved_ids = {p.pk for p in resolved}
+
             if prune:
                 group.permissions.set(resolved)
+                changed = before_ids != resolved_ids
             else:
                 # Additive by default, so a permission granted deliberately in the
                 # admin for a local exception is not silently taken away by a deploy.
                 group.permissions.add(*resolved)
+                changed = not resolved_ids.issubset(before_ids)
 
             if pending:
                 total_pending[definition.code] = pending
 
-            verb = "created" if created else "updated"
+            # Distinct from `created`: a role seeded before still reports
+            # "unchanged" here on every ordinary redeploy, and only "updated"
+            # the one time the policy in roles.py actually adds something —
+            # which is what makes a stretch of identical "updated N" lines on
+            # every deploy worth noticing as a bug rather than routine noise.
+            verb = "created" if created else ("updated" if changed else "unchanged")
             self.stdout.write(
                 f"  {role.code:<14} {verb:<8} "
                 f"{len(resolved):>3} permission(s)"

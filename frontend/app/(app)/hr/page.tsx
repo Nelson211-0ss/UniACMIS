@@ -175,6 +175,11 @@ export default function HrPage() {
           <span>No connection. Showing whatever loaded earlier on this device.</span>
         </div>
       ) : null}
+      {state === "error" ? (
+        <div className="alert alert--error">
+          <span>Could not load HR records. Try again shortly.</span>
+        </div>
+      ) : null}
 
       <div className="grid">
         <div className="card">

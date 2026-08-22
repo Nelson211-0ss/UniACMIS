@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.academics.services import config as academics_config
 from apps.accounts.mixins import ScopedQuerysetMixin
 from apps.core.exceptions import error_envelope
 from apps.core.mixins import CreateWithResponseSerializerMixin
@@ -392,5 +393,9 @@ class FeeBalanceView(APIView):
                 error_envelope("permission_denied", "You may not view this balance."), status=403
             )
         return Response(
-            {"student_id": student_id, "balance": str(services.fee_balance_for_student(student_id))}
+            {
+                "student_id": student_id,
+                "balance": str(services.fee_balance_for_student(student_id)),
+                "currency": academics_config.base_currency(),
+            }
         )

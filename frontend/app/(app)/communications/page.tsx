@@ -100,6 +100,11 @@ export default function CommunicationsPage() {
           <span>No connection. Showing whatever loaded earlier on this device.</span>
         </div>
       ) : null}
+      {state === "error" ? (
+        <div className="alert alert--error">
+          <span>Could not load announcements. Try again shortly.</span>
+        </div>
+      ) : null}
 
       {canSend ? (
         <div className="card">

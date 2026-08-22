@@ -111,6 +111,11 @@ export default function AlumniPage() {
           <span>No connection. Showing whatever loaded earlier on this device.</span>
         </div>
       ) : null}
+      {state === "error" ? (
+        <div className="alert alert--error">
+          <span>Could not load alumni records. Try again shortly.</span>
+        </div>
+      ) : null}
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
         {canManageProfiles ? (

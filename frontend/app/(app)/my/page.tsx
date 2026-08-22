@@ -47,6 +47,7 @@ export default function StudentPortalPage() {
   const [gpa, setGpa] = useState<string | null | undefined>(undefined);
   const [resultsPublished, setResultsPublished] = useState<boolean | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
+  const [currency, setCurrency] = useState("SSP");
   const [clear, setClear] = useState<boolean | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -83,7 +84,10 @@ export default function StudentPortalPage() {
             api.myClearance(currentStudent.id).catch(() => null),
           ]);
           if (cancelled) return;
-          if (feeBalance) setBalance(feeBalance.balance);
+          if (feeBalance) {
+            setBalance(feeBalance.balance);
+            setCurrency(feeBalance.currency);
+          }
           if (clearance) setClear(clearance.clear);
         }
       } catch (error) {
@@ -156,7 +160,13 @@ export default function StudentPortalPage() {
               </span>
             </div>
             <div className="stat__value">
-              {Number(balance) > 0 ? <CountUp value={Number(balance)} /> : "0"}
+              {Number(balance) > 0 ? (
+                <>
+                  <CountUp value={Number(balance)} /> <span style={{ fontSize: "0.6em" }}>{currency}</span>
+                </>
+              ) : (
+                "0"
+              )}
             </div>
             <div className="stat__foot">
               <Link href="/my/finance">View invoices →</Link>
