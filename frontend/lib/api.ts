@@ -432,6 +432,334 @@ export const api = {
     });
   },
 
+  // -------------------------------------------------------- staff directory
+
+  staffProfiles(params = "?page_size=200") {
+    return request<{
+      results: Array<{ id: number; staff_number: string; full_name: string; department_code: string }>;
+    }>(`/registry/staff/${params}`);
+  },
+
+  classList(courseId: number, semesterId: number) {
+    return request<Array<{ registration_id: number; student_id: string; full_name: string; is_repeat: boolean }>>(
+      `/enrollment/class-list/?course=${courseId}&semester=${semesterId}`,
+    );
+  },
+
+  // ------------------------------------------------------ timetabling (staff)
+
+  timetableRooms(params = "?page_size=200") {
+    return request<{
+      results: Array<{ id: number; code: string; name: string; building: string; capacity: number; is_active: boolean }>;
+    }>(`/timetabling/rooms/${params}`);
+  },
+
+  createTimetableRoom(body: { code: string; name: string; building?: string; capacity: number; is_active?: boolean }) {
+    return request<{ id: number }>("/timetabling/rooms/", { method: "POST", body });
+  },
+
+  updateTimetableRoom(id: number, body: Partial<{ code: string; name: string; building: string; capacity: number; is_active: boolean }>) {
+    return request<{ id: number }>(`/timetabling/rooms/${id}/`, { method: "PATCH", body });
+  },
+
+  timetableEntries(semesterId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        course: number;
+        course_code: string;
+        course_title: string;
+        semester: number;
+        room: number | null;
+        room_code: string;
+        lecturer: number | null;
+        lecturer_name: string;
+        day_of_week: number;
+        day_of_week_display: string;
+        start_time: string;
+        end_time: string;
+        is_published: boolean;
+        published_at: string | null;
+      }>;
+    }>(`/timetabling/entries/?semester=${semesterId}&page_size=200`);
+  },
+
+  createTimetableEntry(body: {
+    course: number;
+    semester: number;
+    room?: number | null;
+    lecturer?: number | null;
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+  }) {
+    return request<{ id: number }>("/timetabling/entries/", { method: "POST", body });
+  },
+
+  updateTimetableEntry(
+    id: number,
+    body: Partial<{
+      course: number;
+      semester: number;
+      room: number | null;
+      lecturer: number | null;
+      day_of_week: number;
+      start_time: string;
+      end_time: string;
+    }>,
+  ) {
+    return request<{ id: number }>(`/timetabling/entries/${id}/`, { method: "PATCH", body });
+  },
+
+  publishTimetable(semesterId: number) {
+    return request<{ published_count: number }>("/timetabling/entries/publish/", {
+      method: "POST",
+      body: { semester: semesterId },
+    });
+  },
+
+  examTimetableEntries(semesterId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        course: number;
+        course_code: string;
+        course_title: string;
+        semester: number;
+        room: number | null;
+        room_code: string;
+        invigilators: number[];
+        invigilator_names: string[];
+        exam_date: string;
+        start_time: string;
+        end_time: string;
+        is_published: boolean;
+        published_at: string | null;
+      }>;
+    }>(`/timetabling/exam-entries/?semester=${semesterId}&page_size=200`);
+  },
+
+  createExamTimetableEntry(body: {
+    course: number;
+    semester: number;
+    room?: number | null;
+    invigilators?: number[];
+    exam_date: string;
+    start_time: string;
+    end_time: string;
+  }) {
+    return request<{ id: number }>("/timetabling/exam-entries/", { method: "POST", body });
+  },
+
+  updateExamTimetableEntry(
+    id: number,
+    body: Partial<{
+      course: number;
+      semester: number;
+      room: number | null;
+      invigilators: number[];
+      exam_date: string;
+      start_time: string;
+      end_time: string;
+    }>,
+  ) {
+    return request<{ id: number }>(`/timetabling/exam-entries/${id}/`, { method: "PATCH", body });
+  },
+
+  publishExamTimetable(semesterId: number) {
+    return request<{ published_count: number }>("/timetabling/exam-entries/publish/", {
+      method: "POST",
+      body: { semester: semesterId },
+    });
+  },
+
+  // -------------------------------------------------------- attendance (staff)
+
+  sessionRecords(timetableEntryId: number, sessionDate: string) {
+    return request<{
+      results: Array<{
+        id: number;
+        timetable_entry: number;
+        registration: number;
+        student_id: string;
+        student_name: string;
+        course_code: string;
+        session_date: string;
+        status: string;
+        notes: string;
+      }>;
+    }>(`/attendance/records/?timetable_entry=${timetableEntryId}&session_date=${sessionDate}&page_size=200`);
+  },
+
+  recordAttendance(
+    timetableEntryId: number,
+    sessionDate: string,
+    marks: Array<{ registration_id: number; status: string; notes?: string }>,
+  ) {
+    return request<Array<{ id: number; registration: number; status: string }>>("/attendance/records/record/", {
+      method: "POST",
+      body: { timetable_entry: timetableEntryId, session_date: sessionDate, marks },
+    });
+  },
+
+  grantWaiver(registrationId: number, reason: string) {
+    return request<{
+      sessions_recorded: number;
+      sessions_attended: number;
+      percentage: string | null;
+      threshold: string;
+      below_threshold: boolean;
+      waived: boolean;
+      eligible: boolean;
+    }>(`/attendance/registrations/${registrationId}/waive/`, { method: "POST", body: { reason } });
+  },
+
+  // ------------------------------------------------------ examinations (staff)
+
+  assessments(courseId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        course: number;
+        course_code: string;
+        name: string;
+        weight_percent: string;
+        max_score: string;
+        sequence: number;
+        grade_entry_deadline: string | null;
+      }>;
+    }>(`/examinations/assessments/?course=${courseId}&page_size=100`);
+  },
+
+  createAssessment(body: {
+    course: number;
+    name: string;
+    weight_percent: string | number;
+    max_score?: string | number;
+    sequence?: number;
+    grade_entry_deadline?: string | null;
+  }) {
+    return request<{ id: number }>("/examinations/assessments/", { method: "POST", body });
+  },
+
+  marksForAssessment(assessmentId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        registration: number;
+        student_id: string;
+        student_name: string;
+        assessment: number;
+        assessment_name: string;
+        score: string;
+        effective_score: string;
+        is_late: boolean;
+        moderated_score: string | null;
+        moderation_notes: string;
+        is_irregular: boolean;
+        irregularity_notes: string;
+      }>;
+    }>(`/examinations/marks/?assessment=${assessmentId}&page_size=200`);
+  },
+
+  recordMark(registrationId: number, assessmentId: number, score: string | number) {
+    return request<{ id: number }>("/examinations/marks/record/", {
+      method: "POST",
+      body: { registration: registrationId, assessment: assessmentId, score },
+    });
+  },
+
+  moderateMark(markId: number, moderatedScore: string | number, notes: string) {
+    return request<{ id: number }>(`/examinations/marks/${markId}/moderate/`, {
+      method: "POST",
+      body: { moderated_score: moderatedScore, notes },
+    });
+  },
+
+  flagIrregularity(markId: number, notes: string) {
+    return request<{ id: number }>(`/examinations/marks/${markId}/flag-irregularity/`, {
+      method: "POST",
+      body: { notes },
+    });
+  },
+
+  clearIrregularity(markId: number) {
+    return request<{ id: number }>(`/examinations/marks/${markId}/clear-irregularity/`, { method: "POST" });
+  },
+
+  missingMarks(courseId: number, semesterId: number) {
+    return request<Array<{ registration_id: number; assessment_id: number; assessment_name: string }>>(
+      `/examinations/missing-marks/?course=${courseId}&semester=${semesterId}`,
+    );
+  },
+
+  gradeAppeals(params = "?page_size=100") {
+    return request<{
+      results: Array<{
+        id: number;
+        registration: number;
+        student_id: string;
+        assessment: number | null;
+        reason: string;
+        status: string;
+        decision_notes: string;
+        decided_at: string | null;
+        created_at: string;
+      }>;
+    }>(`/examinations/appeals/${params}`);
+  },
+
+  decideAppeal(appealId: number, decision: "upheld" | "rejected", notes: string) {
+    return request<{ id: number; status: string }>(`/examinations/appeals/${appealId}/decide/`, {
+      method: "POST",
+      body: { decision, notes },
+    });
+  },
+
+  resultApprovals(params = "?page_size=100") {
+    return request<{
+      results: Array<{
+        id: number;
+        semester: number;
+        programme: number | null;
+        status: string;
+        approved_by: number | null;
+        approved_at: string | null;
+        approval_notes: string;
+        published_by: number | null;
+        published_at: string | null;
+        created_at: string;
+      }>;
+    }>(`/examinations/approvals/${params}`);
+  },
+
+  submitForApproval(semesterId: number, programmeId?: number | null) {
+    return request<{ id: number }>("/examinations/approvals/", {
+      method: "POST",
+      body: { semester: semesterId, programme: programmeId ?? null },
+    });
+  },
+
+  approveResult(approvalId: number, notes?: string) {
+    return request<{ id: number; status: string }>(`/examinations/approvals/${approvalId}/approve/`, {
+      method: "POST",
+      body: { notes: notes ?? "" },
+    });
+  },
+
+  rejectResult(approvalId: number, notes: string) {
+    return request<{ id: number; status: string }>(`/examinations/approvals/${approvalId}/reject/`, {
+      method: "POST",
+      body: { notes },
+    });
+  },
+
+  publishResult(approvalId: number) {
+    return request<{ id: number; status: string }>(`/examinations/approvals/${approvalId}/publish/`, {
+      method: "POST",
+    });
+  },
+
   // ------------------------------------------------------------- finance
 
   invoices(params = "?page_size=50") {
@@ -489,7 +817,7 @@ export const api = {
   },
 
   myFeeBalance(studentId: number) {
-    return request<{ student_id: number; balance: string }>(
+    return request<{ student_id: number; balance: string; currency: string }>(
       `/finance/students/${studentId}/balance/`,
     );
   },
@@ -892,6 +1220,508 @@ export const api = {
       }>;
     }>("/sync/batch/", { method: "POST", body: { operations } });
   },
+
+  // ------------------------------------------------------------- admissions
+
+  applications(params = "?page_size=100") {
+    return request<{
+      count: number;
+      results: Array<{
+        id: number;
+        reference_number: string;
+        full_name: string;
+        programme: number;
+        programme_code: string;
+        status: string;
+        score: string | null;
+        fee_paid: boolean;
+        created_at: string;
+      }>;
+    }>(`/admissions/applications/${params}`);
+  },
+
+  application(id: number) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/`);
+  },
+
+  createApplication(body: Record<string, unknown>) {
+    return request<ApplicationDetail>("/admissions/applications/", { method: "POST", body });
+  },
+
+  submitApplication(id: number) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/submit/`, { method: "POST" });
+  },
+
+  withdrawApplication(id: number, reason: string) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/withdraw/`, {
+      method: "POST",
+      body: { reason },
+    });
+  },
+
+  reviewApplication(id: number, score: string | number, comments: string) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/review/`, {
+      method: "POST",
+      body: { score, comments },
+    });
+  },
+
+  decideApplication(id: number, decision: "offered" | "rejected", reason: string) {
+    return request<ApplicationDetail>(`/admissions/applications/${id}/decide/`, {
+      method: "POST",
+      body: { decision, reason },
+    });
+  },
+
+  convertApplication(id: number) {
+    return request<{ student_id: string; id: number }>(
+      `/admissions/applications/${id}/convert/`,
+      { method: "POST" },
+    );
+  },
+
+  initiateApplicationFee(id: number, amount: string | number, currency = "SSP") {
+    return request<{ reference: string; status: string }>(
+      `/admissions/applications/${id}/initiate-payment/`,
+      { method: "POST", body: { amount, currency } },
+    );
+  },
+
+  confirmApplicationFee(id: number, reference: string) {
+    return request<{ reference: string; status: string }>(
+      `/admissions/applications/${id}/confirm-payment/`,
+      { method: "POST", body: { reference } },
+    );
+  },
+
+  meritList(programmeId: number, academicYearId: number) {
+    return request<
+      Array<{
+        application_id: number;
+        reference_number: string;
+        full_name: string;
+        rank: number;
+        score: string | null;
+        admitted: boolean;
+        quota_category: string | null;
+      }>
+    >(`/admissions/merit-list/?programme=${programmeId}&academic_year=${academicYearId}`);
+  },
+
+  // ------------------------------------------------------------- curriculum
+
+  faculties(params = "?page_size=100") {
+    return request<{
+      results: Array<{ id: number; code: string; name: string; is_active: boolean }>;
+    }>(`/curriculum/faculties/${params}`);
+  },
+
+  createFaculty(body: { institution: number; code: string; name: string; description?: string }) {
+    return request<{ id: number }>("/curriculum/faculties/", { method: "POST", body });
+  },
+
+  departments(params = "?page_size=100") {
+    return request<{
+      results: Array<{
+        id: number;
+        code: string;
+        name: string;
+        faculty: number;
+        is_active: boolean;
+      }>;
+    }>(`/curriculum/departments/${params}`);
+  },
+
+  createDepartment(body: { faculty: number; code: string; name: string; description?: string }) {
+    return request<{ id: number }>("/curriculum/departments/", { method: "POST", body });
+  },
+
+  programmesDetailed(params = "?page_size=100") {
+    return request<{
+      results: Array<{
+        id: number;
+        code: string;
+        name: string;
+        award: string;
+        department: number;
+        department_name: string;
+        faculty_code: string;
+        duration_years: number;
+        total_credits_required: number;
+        min_credits_per_semester: number;
+        max_credits_per_semester: number;
+        is_active: boolean;
+      }>;
+    }>(`/curriculum/programmes/${params}`);
+  },
+
+  createProgramme(body: {
+    department: number;
+    code: string;
+    name: string;
+    award: string;
+    duration_years: number;
+    total_credits_required?: number;
+    min_credits_per_semester?: number;
+    max_credits_per_semester?: number;
+  }) {
+    return request<{ id: number }>("/curriculum/programmes/", { method: "POST", body });
+  },
+
+  createCourse(body: {
+    department: number;
+    code: string;
+    title: string;
+    credit_hours: number;
+    level?: number;
+    contact_hours_per_week?: number;
+  }) {
+    return request<{ id: number }>("/curriculum/courses/", { method: "POST", body });
+  },
+
+  curriculumVersions(params = "?page_size=100") {
+    return request<{
+      results: Array<{
+        id: number;
+        programme: number;
+        programme_code: string;
+        version: string;
+        status: string;
+        effective_from: number;
+        effective_to: number | null;
+        core_credits: number;
+      }>;
+    }>(`/curriculum/curriculum-versions/${params}`);
+  },
+
+  createCurriculumVersion(body: {
+    programme: number;
+    version: string;
+    status?: string;
+    effective_from: number;
+    notes?: string;
+  }) {
+    return request<{ id: number }>("/curriculum/curriculum-versions/", { method: "POST", body });
+  },
+
+  curriculumCourses(versionId: number) {
+    return request<{
+      results: Array<{
+        id: number;
+        curriculum_version: number;
+        course: number;
+        course_code: string;
+        course_title: string;
+        credit_hours: number;
+        year_of_study: number;
+        semester_sequence: number;
+        is_core: boolean;
+        elective_group: string;
+      }>;
+    }>(`/curriculum/curriculum-courses/?curriculum_version=${versionId}&page_size=200`);
+  },
+
+  addCurriculumCourse(body: {
+    curriculum_version: number;
+    course: number;
+    year_of_study: number;
+    semester_sequence: number;
+    is_core: boolean;
+    elective_group?: string;
+  }) {
+    return request<{ id: number }>("/curriculum/curriculum-courses/", { method: "POST", body });
+  },
+
+  removeCurriculumCourse(id: number) {
+    return request<void>(`/curriculum/curriculum-courses/${id}/`, { method: "DELETE" });
+  },
+
+  prerequisites(courseId?: number) {
+    const query = courseId ? `?course=${courseId}&page_size=200` : "?page_size=200";
+    return request<{
+      results: Array<{
+        id: number;
+        course: number;
+        required_course: number;
+        required_course_code: string;
+        minimum_grade_point: string | null;
+        is_concurrent_allowed: boolean;
+      }>;
+    }>(`/curriculum/prerequisites/${query}`);
+  },
+
+  addPrerequisite(body: {
+    course: number;
+    required_course: number;
+    minimum_grade_point?: string | null;
+    is_concurrent_allowed?: boolean;
+  }) {
+    return request<{ id: number }>("/curriculum/prerequisites/", { method: "POST", body });
+  },
+
+  removePrerequisite(id: number) {
+    return request<void>(`/curriculum/prerequisites/${id}/`, { method: "DELETE" });
+  },
+
+  // -------------------------------------------------------------- academics
+
+  // `InstitutionViewSet` sets `pagination_class = None` (it is a singleton), so
+  // this list response is a bare array rather than the usual `{results: [...]}`.
+  institution() {
+    return request<
+      Array<{
+        id: number;
+        name: string;
+        short_name: string;
+        mohest_code: string;
+        default_currency: string;
+        secondary_currency: string;
+        address: string;
+        phone: string;
+        email: string;
+        website: string;
+        attendance_threshold_percent: string;
+        timezone: string;
+      }>
+    >("/academics/institution/");
+  },
+
+  updateInstitution(id: number, body: Record<string, unknown>) {
+    return request<{ id: number }>(`/academics/institution/${id}/`, { method: "PATCH", body });
+  },
+
+  createAcademicYear(body: {
+    name: string;
+    start_date: string;
+    end_date: string;
+    is_current?: boolean;
+  }) {
+    return request<{ id: number }>("/academics/academic-years/", { method: "POST", body });
+  },
+
+  updateAcademicYear(id: number, body: Record<string, unknown>) {
+    return request<{ id: number }>(`/academics/academic-years/${id}/`, { method: "PATCH", body });
+  },
+
+  createSemester(body: {
+    academic_year: number;
+    sequence: number;
+    name: string;
+    teaching_start: string;
+    teaching_end: string;
+    exam_start?: string | null;
+    exam_end?: string | null;
+    registration_opens?: string | null;
+    registration_closes?: string | null;
+    add_drop_closes?: string | null;
+    is_current?: boolean;
+  }) {
+    return request<{ id: number }>("/academics/semesters/", { method: "POST", body });
+  },
+
+  updateSemester(id: number, body: Record<string, unknown>) {
+    return request<{ id: number }>(`/academics/semesters/${id}/`, { method: "PATCH", body });
+  },
+
+  gradingScales() {
+    return request<{
+      results: Array<{
+        id: number;
+        name: string;
+        description: string;
+        max_grade_point: string;
+        pass_grade_point: string;
+        is_default: boolean;
+        is_locked: boolean;
+        effective_from: number | null;
+        bands: Array<{
+          id: number;
+          scale: number;
+          letter: string;
+          min_percent: string;
+          max_percent: string;
+          grade_point: string;
+          is_pass: boolean;
+          description: string;
+        }>;
+      }>;
+    }>("/academics/grading-scales/?page_size=50");
+  },
+
+  bandsCheck(scaleId: number) {
+    return request<{ ok: boolean; errors: string[] }>(
+      `/academics/grading-scales/${scaleId}/bands-check/`,
+    );
+  },
+
+  addGradeBand(body: {
+    scale: number;
+    letter: string;
+    min_percent: string;
+    max_percent: string;
+    grade_point: string;
+    is_pass: boolean;
+    description?: string;
+  }) {
+    return request<{ id: number }>("/academics/grade-bands/", { method: "POST", body });
+  },
+
+  removeGradeBand(id: number) {
+    return request<void>(`/academics/grade-bands/${id}/`, { method: "DELETE" });
+  },
+
+  // ------------------------------------------------------- users and roles
+
+  users(params = "?page_size=100") {
+    return request<{
+      count: number;
+      results: Array<{
+        id: number;
+        email: string;
+        first_name: string;
+        last_name: string;
+        full_name: string;
+        phone: string;
+        is_active: boolean;
+        is_staff: boolean;
+        mfa_enabled: boolean;
+        must_change_password: boolean;
+        roles: string[];
+        last_login: string | null;
+      }>;
+    }>(`/auth/users/${params}`);
+  },
+
+  roles() {
+    return request<Array<{ code: string; name: string; description: string }>>("/auth/roles/");
+  },
+
+  createUser(body: {
+    email: string;
+    first_name: string;
+    last_name: string;
+    middle_name?: string;
+    phone?: string;
+    password: string;
+  }) {
+    return request<{ id: number }>("/auth/users/", { method: "POST", body });
+  },
+
+  updateUser(id: number, body: Record<string, unknown>) {
+    return request<{ id: number }>(`/auth/users/${id}/`, { method: "PATCH", body });
+  },
+
+  grantRole(userId: number, roleCode: string, reason: string) {
+    return request<{ id: number }>(`/auth/users/${userId}/grant-role/`, {
+      method: "POST",
+      body: { role_code: roleCode, reason },
+    });
+  },
+
+  revokeRole(userId: number, roleCode: string, reason: string) {
+    return request<void>(`/auth/users/${userId}/revoke-role/`, {
+      method: "POST",
+      body: { role_code: roleCode, reason },
+    });
+  },
+
+  roleHistory(userId: number) {
+    return request<
+      Array<{
+        id: number;
+        role_code: string;
+        granted_at: string;
+        granted_by_name: string;
+        revoked_at: string | null;
+        reason: string;
+      }>
+    >(`/auth/users/${userId}/role-history/`);
+  },
+
+  // ------------------------------------------------------------ audit trail
+
+  auditEntries(params = "") {
+    return request<{
+      next: string | null;
+      previous: string | null;
+      results: Array<{
+        id: number;
+        entity: string;
+        object_id: string;
+        object_repr: string;
+        action: string;
+        field_name: string;
+        old_value: string | null;
+        new_value: string | null;
+        description: string;
+        reason: string;
+        actor_display: string;
+        actor_role: string;
+        ip_address: string | null;
+        request_id: string;
+        created_at: string;
+      }>;
+    }>(`/audit/entries/${params}`);
+  },
+
+  verifyAuditChain(limit?: number) {
+    const query = limit ? `?limit=${limit}` : "";
+    return request<{
+      ok: boolean;
+      checked: number;
+      first_broken_id: number | null;
+      detail: string;
+    }>(`/audit/verify-chain/${query}`);
+  },
 };
+
+export interface ApplicationDetail {
+  id: number;
+  reference_number: string;
+  full_name: string;
+  programme: number;
+  programme_code: string;
+  intended_academic_year: number;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  date_of_birth: string | null;
+  gender: string;
+  nationality: string;
+  phone: string;
+  email: string;
+  national_id_number: string;
+  state_of_origin: string;
+  county: string;
+  has_disability: boolean;
+  disability_details: string;
+  physical_address: string;
+  previous_institution: string;
+  previous_qualification: string;
+  previous_grade: string;
+  status: string;
+  source: string;
+  submitted_at: string | null;
+  score: string | null;
+  decision_reason: string;
+  fee_paid: boolean;
+  student: number | null;
+  documents: Array<{ id: number; document_type: string; title: string; file: string }>;
+  reviews: Array<{
+    id: number;
+    reviewer_name: string;
+    score: string;
+    comments: string;
+    created_at: string;
+  }>;
+  fee_payments: Array<{
+    id: number;
+    reference: string;
+    amount: string;
+    currency: string;
+    status: string;
+  }>;
+  created_at: string;
+}
 
 export { BASE_URL };

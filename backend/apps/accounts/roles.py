@@ -83,7 +83,14 @@ ACADEMICS_MANAGE = (
     *write("academics.academicyear"),
     *write("academics.semester"),
     *write("academics.gradingscale"),
-    *write("academics.gradeband"),
+    # The one academics row that may be deleted. `write()` (no delete) is right
+    # for anything that records something which happened, but a grade band is
+    # configuration, and a scale is only usable when its bands cover 0–100
+    # exactly with no overlaps. A band added in error therefore cannot be left
+    # in place — it would keep the whole scale unusable, and no amount of
+    # editing the *other* bands can absorb a surplus one. `is_locked` is what
+    # protects a scale results already depend on.
+    *crud("academics.gradeband"),
 )
 
 REGISTRY_MANAGE = (
@@ -237,6 +244,10 @@ ROLES: tuple[RoleDefinition, ...] = (
             "enrollment.view_courseregistration",
             # Phase 3
             "attendance.view_sessionrecord",
+            # Moderating a mark means knowing the scheme it was entered
+            # against (weight, max score) — `examinations.view_mark` alone
+            # doesn't expose that.
+            "examinations.view_assessment",
             "examinations.view_mark",
             "examinations.moderate_result",
             "examinations.view_gradeappeal",
@@ -265,7 +276,13 @@ ROLES: tuple[RoleDefinition, ...] = (
         permissions=(
             *REGISTRY_MANAGE,
             *CURRICULUM_MANAGE,
-            *ACADEMICS_READ,
+            # The academic calendar is the registrar's own instrument — they set
+            # the registration and add/drop windows their office then enforces,
+            # so read-only access here would mean asking the examinations office
+            # to open registration on their behalf. Grading scales come with the
+            # same grant (`ACADEMICS_MANAGE` is one block) but stay effectively
+            # examinations-owned by `is_locked` once results are published.
+            *ACADEMICS_MANAGE,
             *ro("registry.staffprofile"),
             *ro("core.syncoperation"),
             *ro("core.syncconflict"),
@@ -339,6 +356,12 @@ ROLES: tuple[RoleDefinition, ...] = (
         ),
         permissions=(
             *ro("registry.student"),
+            # Invigilator assignment on the exam timetable needs to look staff
+            # up; a room to book needs the room list — neither is examinations
+            # work in itself, but the exam-timetable workflow can't function
+            # without read access to both.
+            *ro("registry.staffprofile"),
+            "timetabling.view_room",
             *CURRICULUM_READ,
             *ACADEMICS_MANAGE,
             # Phase 3
@@ -372,6 +395,9 @@ ROLES: tuple[RoleDefinition, ...] = (
         ),
         permissions=(
             *ro("registry.student"),
+            # Senate holds `view_assessment` but has no way to browse to a
+            # course's scheme without the course catalogue itself.
+            *CURRICULUM_READ,
             *ACADEMICS_READ,
             "examinations.view_mark",
             "examinations.view_assessment",

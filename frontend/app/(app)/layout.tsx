@@ -7,7 +7,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { UserMenu } from "@/components/UserMenu";
 import {
-  AlertCircleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   GraduationCapIcon,
@@ -158,16 +157,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <ConnectionStatus />
           </div>
         </header>
-
-        {user.must_change_password ? (
-          <div className="alert alert--warning" style={{ margin: "16px 16px 0" }}>
-            <AlertCircleIcon size={18} />
-            <span>
-              This account is still using the password it was created with. Change it
-              before doing anything else.
-            </span>
-          </div>
-        ) : null}
 
         <main className="content">{children}</main>
       </div>

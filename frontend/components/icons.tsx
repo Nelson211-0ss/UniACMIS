@@ -314,6 +314,24 @@ export function PhoneIcon({ size = 18, ...props }: IconProps) {
   );
 }
 
+export function MailIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <rect x="2.5" y="4.5" width="19" height="15" rx="2" />
+      <path d="M3 6.5l9 6.5 9-6.5" />
+    </svg>
+  );
+}
+
+export function LockIcon({ size = 18, ...props }: IconProps) {
+  return (
+    <svg {...base(size)} {...props}>
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
 export function CreditCardIcon({ size = 18, ...props }: IconProps) {
   return (
     <svg {...base(size)} {...props}>

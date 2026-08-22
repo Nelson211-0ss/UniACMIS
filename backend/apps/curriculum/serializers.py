@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from apps.core.mixins import ModelCleanSerializerMixin
 from apps.curriculum.models import (
     Course,
     CurriculumCourse,
@@ -62,7 +63,7 @@ class ProgrammeSerializer(serializers.ModelSerializer):
         ]
 
 
-class PrerequisiteSerializer(serializers.ModelSerializer):
+class PrerequisiteSerializer(ModelCleanSerializerMixin, serializers.ModelSerializer):
     required_course_code = serializers.CharField(source="required_course.code", read_only=True)
 
     class Meta:
@@ -98,7 +99,7 @@ class CourseSerializer(serializers.ModelSerializer):
         ]
 
 
-class CurriculumCourseSerializer(serializers.ModelSerializer):
+class CurriculumCourseSerializer(ModelCleanSerializerMixin, serializers.ModelSerializer):
     course_code = serializers.CharField(source="course.code", read_only=True)
     course_title = serializers.CharField(source="course.title", read_only=True)
     credit_hours = serializers.IntegerField(source="course.credit_hours", read_only=True)
@@ -107,6 +108,10 @@ class CurriculumCourseSerializer(serializers.ModelSerializer):
         model = CurriculumCourse
         fields = [
             "id",
+            # Writable so a row can be attached through `CurriculumCourseViewSet`;
+            # redundant but harmless in the read-only nested use under
+            # `CurriculumVersionSerializer.courses`, where it is the parent's id.
+            "curriculum_version",
             "course",
             "course_code",
             "course_title",

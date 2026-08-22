@@ -9,16 +9,20 @@ from rest_framework.response import Response
 from apps.core.permissions import HasModulePermission
 from apps.curriculum.models import (
     Course,
+    CurriculumCourse,
     CurriculumVersion,
     Department,
     Faculty,
+    Prerequisite,
     Programme,
 )
 from apps.curriculum.serializers import (
     CourseSerializer,
+    CurriculumCourseSerializer,
     CurriculumVersionSerializer,
     DepartmentSerializer,
     FacultySerializer,
+    PrerequisiteSerializer,
     ProgrammeSerializer,
 )
 from apps.curriculum.services import curriculum_health
@@ -72,6 +76,40 @@ class CourseViewSet(viewsets.ModelViewSet):
     required_permissions = _crud("course")
     filterset_fields = ["department", "level", "is_active"]
     search_fields = ["code", "title"]
+
+
+class CurriculumCourseViewSet(viewsets.ModelViewSet):
+    """Which courses a curriculum version is made of, and where each sits in
+    the programme's structure (FR-CUR-03).
+
+    The rules worth failing on — a year_of_study past the programme's duration,
+    an elective with no group to choose within — live in
+    `CurriculumCourse.clean()`, run via `ModelCleanSerializerMixin`.
+    """
+
+    queryset = CurriculumCourse.objects.select_related(
+        "course", "curriculum_version__programme"
+    ).all()
+    serializer_class = CurriculumCourseSerializer
+    permission_classes = [HasModulePermission]
+    required_permissions = _crud("curriculumcourse")
+    filterset_fields = ["curriculum_version", "course", "year_of_study", "is_core"]
+    ordering = ["year_of_study", "semester_sequence"]
+
+
+class PrerequisiteViewSet(viewsets.ModelViewSet):
+    """Course prerequisites (FR-CUR-02).
+
+    `Prerequisite.clean()` walks the dependency graph to refuse a cycle — a
+    chain that would make its own courses permanently unregisterable — and is
+    run via `ModelCleanSerializerMixin`, which a plain serializer save skips.
+    """
+
+    queryset = Prerequisite.objects.select_related("course", "required_course").all()
+    serializer_class = PrerequisiteSerializer
+    permission_classes = [HasModulePermission]
+    required_permissions = _crud("prerequisite")
+    filterset_fields = ["course", "required_course"]
 
 
 class CurriculumVersionViewSet(viewsets.ModelViewSet):

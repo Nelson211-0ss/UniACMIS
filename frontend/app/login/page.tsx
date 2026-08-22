@@ -6,20 +6,15 @@ import { useRouter } from "next/navigation";
 import { HeroSlider } from "@/components/HeroSlider";
 import {
   AlertCircleIcon,
-  CheckCircleIcon,
   EyeIcon,
   EyeOffIcon,
   GraduationCapIcon,
+  LockIcon,
+  MailIcon,
   WifiOffIcon,
 } from "@/components/icons";
 import { ApiFailure } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-
-const HERO_FEATURES = [
-  "Works through power and network outages",
-  "Every grade and fee change is auditable",
-  "Role-based access for every office on campus",
-];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -65,44 +60,18 @@ export default function LoginPage() {
 
   return (
     <main className="login">
-      <section className="login__hero" aria-hidden="true">
-        <HeroSlider />
-        <div className="login__hero-brand">
-          <span className="login__hero-mark">
-            <GraduationCapIcon size={22} />
+      <HeroSlider />
+
+      <div className="login__center">
+        <div className="login__brand">
+          <span className="login__brand-mark">
+            <GraduationCapIcon size={24} />
           </span>
-          UniACMIS
+          <span className="login__brand-text">UniACMIS</span>
         </div>
+        <p className="login__tagline">Academic management, built for South Sudan.</p>
 
-        <div className="login__hero-copy">
-          <h1>Academic Management, built for South Sudan.</h1>
-          <p>
-            One system for admissions, registry, examinations and finance — designed
-            to keep working when the power and the connection don&rsquo;t.
-          </p>
-
-          <ul className="login__hero-features">
-            {HERO_FEATURES.map((feature) => (
-              <li key={feature}>
-                <CheckCircleIcon size={18} />
-                {feature}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="login__hero-foot">
-          University Academic Management Information System
-        </p>
-      </section>
-
-      <section className="login__panel">
         <form className="login__card" onSubmit={onSubmit}>
-          <div className="login__mobile-brand">
-            <GraduationCapIcon size={22} />
-            UniACMIS
-          </div>
-
           <h1 className="login__title">Sign in</h1>
           <p className="login__sub">Enter your university account to continue.</p>
 
@@ -115,21 +84,25 @@ export default function LoginPage() {
 
           <div className="field">
             <label htmlFor="email">Email address</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="username"
-              inputMode="email"
-              placeholder="you@university.edu.ss"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
+            <div className="field--icon">
+              <MailIcon size={18} />
+              <input
+                id="email"
+                type="email"
+                autoComplete="username"
+                inputMode="email"
+                placeholder="you@university.edu.ss"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
           </div>
 
           <div className="field">
             <label htmlFor="password">Password</label>
             <div className="field--icon field--password">
+              <LockIcon size={18} />
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -137,7 +110,6 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                style={{ paddingLeft: 12 }}
               />
               <button
                 type="button"
@@ -156,7 +128,9 @@ export default function LoginPage() {
             {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>
-      </section>
+
+        <p className="login__foot">University Academic Management Information System</p>
+      </div>
     </main>
   );
 }

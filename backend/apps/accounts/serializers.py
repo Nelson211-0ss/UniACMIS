@@ -181,10 +181,20 @@ class UserRoleSerializer(serializers.ModelSerializer):
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
-    """Account management for ICT."""
+    """Account management for ICT.
+
+    `password` is write-only and optional at the field level — required on
+    create (enforced in `create()`, not by the field itself, since the same
+    serializer also handles PATCH for every other attribute without forcing
+    a password on each one) and, on update, only rehashed via `set_password`
+    if actually supplied. Never written through the default
+    `ModelSerializer.update()`'s plain `setattr`, which would otherwise store
+    it as plaintext.
+    """
 
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     roles = serializers.SerializerMethodField()
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
 
     class Meta:
         model = User
@@ -200,6 +210,7 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "is_staff",
             "mfa_enabled",
             "must_change_password",
+            "password",
             "roles",
             "last_login",
             "created_at",
@@ -208,6 +219,22 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj: User) -> list[str]:
         return obj.role_codes()
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", None)
+        if not password:
+            raise serializers.ValidationError(
+                {"password": "A password is required to create an account."}
+            )
+        return User.objects.create_user(password=password, **validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save(update_fields=["password"])
+        return user
 
 
 class RoleAssignmentSerializer(serializers.Serializer):

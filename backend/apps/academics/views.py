@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.academics.models import AcademicYear, GradingScale, Institution, Semester
+from apps.academics.models import (
+    AcademicYear,
+    GradeBand,
+    GradingScale,
+    Institution,
+    Semester,
+)
 from apps.academics.serializers import (
     AcademicYearSerializer,
+    GradeBandSerializer,
     GradingScaleSerializer,
     InstitutionSerializer,
     SemesterSerializer,
@@ -71,6 +80,45 @@ class GradingScaleViewSet(viewsets.ModelViewSet):
         "POST": "academics.add_gradingscale",
         "PUT": "academics.change_gradingscale",
         "PATCH": "academics.change_gradingscale",
+    }
+
+    @extend_schema(summary="Is this scale's band coverage usable?", responses={200: dict})
+    @action(detail=True, methods=["get"], url_path="bands-check")
+    def bands_check(self, request: Request, pk: str | None = None) -> Response:
+        """A misconfigured scale silently corrupts every transcript computed
+        from it, so this answers "is it safe to publish results against this
+        yet?" before anything depends on the answer."""
+        try:
+            self.get_object().validate_bands()
+        except DjangoValidationError as error:
+            return Response({"ok": False, "errors": list(error.messages)})
+        return Response({"ok": True, "errors": []})
+
+
+class GradeBandViewSet(viewsets.ModelViewSet):
+    """The letter grades a scale is made of (FR-EXM-04).
+
+    A band is edited one row at a time — a registrar adds "A: 70–100" before
+    knowing what the next band will be — so the whole-scale invariant (0–100
+    covered exactly, no gaps, no overlaps) is *not* enforced per write. That
+    would make incremental entry impossible, the same reason
+    `examinations.Assessment` validates its weight sum at result time rather
+    than on each component. `GradingScale.validate_bands()` is the whole-scale
+    check; `bands-check/` exposes it so a registrar can ask "is this scale
+    usable yet?" before results depend on the answer.
+    """
+
+    queryset = GradeBand.objects.select_related("scale").all()
+    serializer_class = GradeBandSerializer
+    permission_classes = [HasModulePermission]
+    filterset_fields = ["scale", "is_pass"]
+    ordering = ["scale", "-min_percent"]
+    required_permissions = {
+        "GET": "academics.view_gradeband",
+        "POST": "academics.add_gradeband",
+        "PUT": "academics.change_gradeband",
+        "PATCH": "academics.change_gradeband",
+        "DELETE": "academics.delete_gradeband",
     }
 
 

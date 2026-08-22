@@ -9,6 +9,7 @@ from apps.academics.models import (
     Institution,
     Semester,
 )
+from apps.core.mixins import ModelCleanSerializerMixin
 
 
 class InstitutionSerializer(serializers.ModelSerializer):
@@ -67,11 +68,17 @@ class AcademicYearSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "start_date", "end_date", "is_current", "semesters"]
 
 
-class GradeBandSerializer(serializers.ModelSerializer):
+class GradeBandSerializer(ModelCleanSerializerMixin, serializers.ModelSerializer):
+    """Nested read-only inside `GradingScaleSerializer`, and served writably by
+    `GradeBandViewSet`. Per-row rules (`min <= max`, and the refusal to touch a
+    band belonging to a locked scale) live in `GradeBand.clean()`, which the
+    mixin runs so the API cannot bypass what the admin enforces."""
+
     class Meta:
         model = GradeBand
         fields = [
             "id",
+            "scale",
             "letter",
             "min_percent",
             "max_percent",

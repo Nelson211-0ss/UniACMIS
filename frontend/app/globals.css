@@ -33,6 +33,10 @@
   --muted-strong: #4b5563;
   --border: #d8dce3;
   --border-strong: #b8c0cc;
+  /* The side-scroll hint on `.table-scroll` — a dark tint here, since it sits
+     against a light surface; the dark theme below flips it to a light tint
+     for the same reason. */
+  --scroll-shadow: rgba(15, 23, 42, 0.18);
 
   /* ---- brand: navy ink + gold seal ---- */
   --ink: #1b2a4a;
@@ -195,6 +199,7 @@
   --muted-strong: #c4c4c4;
   --border: #272727;
   --border-strong: #3f3f3f;
+  --scroll-shadow: rgba(255, 255, 255, 0.16);
 
   --ink: #5d7ec4;
   --ink-strong: #7195d6;
@@ -599,6 +604,35 @@ svg {
 
   .topbar__brand {
     display: inline-flex;
+  }
+
+  /* The icon-rail "collapse" affordance is a desktop idea — shrink a
+     permanently-visible sidebar to reclaim width. On mobile the sidebar is
+     already an overlay drawer toggled fully open/closed by the hamburger
+     above, so collapsing it too just leaves a narrow, label-less drawer
+     still covering the page with no obvious way back out. */
+  .sidebar__collapse-btn {
+    display: none;
+  }
+
+  /* Belt-and-braces for the same reason: `collapsed` is plain React state,
+     not reset by a viewport change, so a desktop collapse that survives a
+     resize or rotation down to this width must not leave the drawer
+     rendering as an unreadable, unlabeled icon rail with no way back. */
+  .sidebar.is-collapsed {
+    width: min(var(--nav-w), 82vw);
+  }
+
+  .sidebar.is-collapsed .nav__section {
+    display: block;
+  }
+
+  .sidebar.is-collapsed .sidebar__brand-text {
+    display: flex;
+  }
+
+  .sidebar.is-collapsed .nav__link-label {
+    display: inline;
   }
 
   .sidebar {
@@ -1415,6 +1449,23 @@ button.sm {
      on narrow screens without limiting how far horizontal scroll can go. */
   margin: 0 calc(var(--sp-6) * -1);
   padding: 0 var(--sp-6);
+  /* A columns-run-off-the-right table gives no visible cue that there is
+     more to see, which reads as "the data is missing" on a phone rather
+     than "swipe to see it" — this is the classic four-layer scroll-shadow
+     trick: two `--surface`-coloured fades pinned to the ends of the
+     scrollable *content* (attachment: local, so they travel with it) mask
+     two edge shadows pinned to the *viewport* (attachment: scroll, so they
+     stay put) whenever that end is not yet reached. Net effect: a shadow
+     shows only on the side(s) still holding hidden columns, with no JS and
+     no per-page change needed. */
+  background-image: linear-gradient(to right, var(--surface) 0%, transparent 100%),
+    linear-gradient(to left, var(--surface) 0%, transparent 100%),
+    linear-gradient(to right, var(--scroll-shadow), transparent),
+    linear-gradient(to left, var(--scroll-shadow), transparent);
+  background-repeat: no-repeat;
+  background-size: var(--sp-6) 100%, var(--sp-6) 100%, 16px 100%, 16px 100%;
+  background-position: left, right, left, right;
+  background-attachment: local, local, scroll, scroll;
 }
 
 table {
@@ -1731,27 +1782,25 @@ tbody tr:last-child td {
 
 /* ----------------------------------------------------------------- login */
 
+/* One full-bleed campus backdrop with the sign-in card centred on top of it,
+   rather than a photo panel beside a form panel. `place-items: center` does the
+   centring in both axes at once, so the card stays put as the viewport changes
+   shape and there is no second column to run out of room. */
 .login {
+  position: relative;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-}
-
-.login__hero {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: var(--sp-10);
-  background: radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.06), transparent 45%),
-    var(--brand-hero-start);
-  color: #ffffff;
+  place-items: center;
+  padding: var(--sp-6);
   overflow: hidden;
+  /* Behind the photos, so the first paint is this institution's navy rather
+     than a white flash while the first image decodes. */
+  background: var(--brand-hero-start);
+  color: #ffffff;
 }
 
-/* The campus photo backdrop sits behind everything else in the hero — the
-   brand mark, copy and feature list already carry `position: relative;
-   z-index: 1` to float above it. */
+/* The campus photo backdrop covers the whole page and sits behind the card,
+   which carries its own `z-index: 1`. */
 .hero-slider {
   position: absolute;
   inset: 0;
@@ -1777,20 +1826,20 @@ tbody tr:last-child td {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(
-    165deg,
-    rgba(27, 42, 74, 0.82) 0%,
-    rgba(27, 42, 74, 0.68) 45%,
-    rgba(27, 42, 74, 0.88) 100%
-  );
+  /* Lighter than a full scrim now that the sign-in card is opaque and carries
+     its own contrast — only the brand, tagline and footer sit directly on the
+     photo. The radial pass darkens the middle, which is exactly where that
+     white text lands, so the campus stays visible at the edges. */
+  background: radial-gradient(ellipse at 50% 45%, rgba(15, 25, 48, 0.62) 0%, rgba(15, 25, 48, 0.28) 70%),
+    linear-gradient(165deg, rgba(27, 42, 74, 0.5) 0%, rgba(27, 42, 74, 0.34) 45%, rgba(27, 42, 74, 0.6) 100%);
 }
 
-/* Sits just above `.login__hero-foot`, not flush with the hero's bottom
-   edge, so the dots and that footer line never overlap. */
+/* Centred along the bottom edge, clear of the card above it. */
 .hero-slider__dots {
   position: absolute;
-  left: var(--sp-10);
-  bottom: calc(var(--sp-10) + 32px);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: var(--sp-5);
   z-index: 1;
   display: flex;
   gap: 6px;
@@ -1809,96 +1858,93 @@ tbody tr:last-child td {
   background: #ffffff;
 }
 
-.login__hero-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-3);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.25rem;
+/* The centred stack: brand, card, then the supporting lines. Sized to the card
+   so the text above and below stays aligned with its edges. */
+.login__center {
   position: relative;
   z-index: 1;
-}
-
-.login__hero-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--seal);
-}
-
-.login__hero-copy {
-  position: relative;
-  z-index: 1;
-  max-width: 420px;
-}
-
-.login__hero-copy h1 {
-  color: #ffffff;
-  font-size: 1.875rem;
-  line-height: 1.25;
-}
-
-.login__hero-copy p {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-.login__hero-features {
-  list-style: none;
-  padding: 0;
-  margin: var(--sp-6) 0 0;
+  width: 100%;
+  /* Deliberately narrow — a sign-in form is two fields, and a portrait card
+     reads as one on a wide campus photo far better than a squat wide one. */
+  max-width: 360px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-5);
 }
 
-.login__hero-features li {
-  display: flex;
+.login__brand {
+  display: inline-flex;
   align-items: center;
   gap: var(--sp-3);
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.9375rem;
-}
-
-.login__hero-features svg {
-  flex-shrink: 0;
-  color: var(--seal);
-}
-
-.login__hero-foot {
-  position: relative;
-  z-index: 1;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.login__panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-6);
-  background: var(--bg);
-}
-
-.login__card {
-  width: 100%;
-  max-width: 380px;
-}
-
-.login__mobile-brand {
-  display: none;
-  align-items: center;
-  gap: var(--sp-2);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.125rem;
-  margin-bottom: var(--sp-6);
-  color: var(--ink);
+  font-size: 1.375rem;
+}
+
+.login__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--seal);
+  color: #ffffff;
+}
+
+/* Explicit white rather than inherited: this text sits on a photo, never on a
+   themed surface, so it must not follow the light/dark token. */
+.login__brand-text,
+.login__tagline,
+.login__foot {
+  color: #ffffff;
+}
+
+.login__tagline {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* The one element on this page that is a normal themed surface — it holds form
+   controls, which need real contrast, so it stays opaque rather than becoming a
+   translucent panel the inputs would have to fight. */
+.login__card {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  /* Generous vertical padding and roomier fields inside: the card is meant to
+     stand tall rather than wide (see `.login__center`). */
+  padding: var(--sp-10) var(--sp-6);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.45), 0 8px 16px -8px rgba(0, 0, 0, 0.3);
+}
+
+.login__card .field {
+  margin-bottom: var(--sp-5);
+}
+
+.login__card .field input {
+  padding-top: var(--sp-3);
+  padding-bottom: var(--sp-3);
+}
+
+.login__card button[type="submit"] {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-3);
+  padding-bottom: var(--sp-3);
+}
+
+.login__foot {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.62);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .login__title {
@@ -1912,18 +1958,12 @@ tbody tr:last-child td {
   font-size: 0.9375rem;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 560px) {
   .login {
-    grid-template-columns: 1fr;
-  }
-  .login__hero {
-    display: none;
-  }
-  .login__mobile-brand {
-    display: flex;
-  }
-  .login__panel {
     padding: var(--sp-4);
+  }
+  .login__card {
+    padding: var(--sp-8) var(--sp-5);
   }
 }
 
@@ -2018,4 +2058,32 @@ button.theme-toggle:hover {
 
 [data-theme="dark"] .theme-toggle:hover {
   color: var(--seal-strong);
+}
+
+/* The rest of the icon-only utility buttons — the sidebar collapse toggle,
+   the mobile topbar menu button, the password-reveal toggle, and the
+   user-menu trigger — want the exact same "transparent, soft tint on
+   hover" treatment `.theme-toggle` already gets above, in *both* themes,
+   not just dark. They were quietly losing that fight in light mode too:
+   `button:hover:not(:disabled)` (an element plus two pseudo-classes) beats
+   a plain single-class `:hover` rule on specificity regardless of theme,
+   so hovering any of these showed the default ink-navy button fill
+   instead of staying subtle. `:not(:disabled)` here is a no-op (none of
+   these are ever disabled) added purely to clear that bar; `[data-theme
+   ="dark"] button`'s flat element+attribute selector is the other rule
+   the base (non-hover) state has to beat. */
+button.icon-btn,
+button.sidebar__collapse-btn,
+button.topbar__menu-btn,
+button.field-toggle,
+button.menu__trigger {
+  background: transparent;
+}
+
+button.icon-btn:hover:not(:disabled),
+button.sidebar__collapse-btn:hover:not(:disabled),
+button.topbar__menu-btn:hover:not(:disabled),
+button.field-toggle:hover:not(:disabled),
+button.menu__trigger:hover:not(:disabled) {
+  background: var(--surface-sunken);
 }

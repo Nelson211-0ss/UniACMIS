@@ -10,6 +10,7 @@ import {
   CreditCardIcon,
   DashboardIcon,
   FileTextIcon,
+  FingerprintIcon,
   InboxIcon,
   LayersIcon,
   MegaphoneIcon,
@@ -113,7 +114,44 @@ export const NAV: NavItem[] = [
     description: "Invoices, receipts and your fee balance.",
   },
 
+  // ------------------------------------------------------ academic operations
+  {
+    href: "/examinations",
+    label: "Examinations",
+    icon: LayersIcon,
+    permission: null,
+    roles: ["lecturer", "hod", "examinations", "senate"],
+    section: "Academic operations",
+    description: "Mark entry, moderation, approvals and appeals.",
+  },
+  {
+    href: "/attendance",
+    label: "Attendance registers",
+    icon: ClockIcon,
+    permission: null,
+    roles: ["lecturer", "hod", "examinations"],
+    section: "Academic operations",
+    description: "Mark a class session and manage eligibility waivers.",
+  },
+  {
+    href: "/timetabling",
+    label: "Timetable & rooms",
+    icon: CalendarIcon,
+    permission: null,
+    roles: ["registrar", "examinations"],
+    section: "Academic operations",
+    description: "Rooms, the class timetable and the exam timetable.",
+  },
+
   // -------------------------------------------------------------- registry
+  {
+    href: "/admissions",
+    label: "Admissions",
+    icon: UserPlusIcon,
+    permission: "admissions.view_application",
+    section: "Registry",
+    description: "Applications, review, merit lists and offers.",
+  },
   {
     href: "/students",
     label: "Students",
@@ -199,6 +237,40 @@ export const NAV: NavItem[] = [
     permission: "reporting.view_dashboard",
     section: "Back office",
     description: "KPIs, statutory exports and custom reports.",
+  },
+
+  // ------------------------------------------------------------ configuration
+  {
+    href: "/curriculum",
+    label: "Curriculum",
+    icon: LayersIcon,
+    permission: "curriculum.add_programme",
+    section: "Configuration",
+    description: "Faculties, departments, programmes, courses and versions.",
+  },
+  {
+    href: "/academics",
+    label: "Calendar & grading",
+    icon: CalendarIcon,
+    permission: "academics.change_semester",
+    section: "Configuration",
+    description: "Institution details, the academic calendar and grading scales.",
+  },
+  {
+    href: "/users",
+    label: "Users & roles",
+    icon: UsersIcon,
+    permission: "accounts.view_user",
+    section: "Configuration",
+    description: "Staff accounts and role assignment.",
+  },
+  {
+    href: "/audit",
+    label: "Audit trail",
+    icon: FingerprintIcon,
+    permission: "audit.view_auditlog",
+    section: "Configuration",
+    description: "The tamper-evident record of every change.",
   },
 
   // ---------------------------------------------------------------- device
