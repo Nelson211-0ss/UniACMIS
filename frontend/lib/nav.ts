@@ -27,6 +27,9 @@ export interface NavItem {
   permission: string | null;
   /** Shown only to one of these roles, or everyone if omitted. */
   roles?: string[];
+  /** Hidden from these roles even when `roles`/`permission` would allow it —
+   * for a destination another entry already covers better for them. */
+  hiddenFor?: string[];
   section: string;
   /** One line shown on the dashboard's quick-links card, not in the sidebar. */
   description?: string;
@@ -55,6 +58,9 @@ export const NAV: NavItem[] = [
     label: "Dashboard",
     icon: DashboardIcon,
     permission: null,
+    // "My portal" is the student's dashboard; `/dashboard` redirects them there,
+    // so listing both would be one link too many pointing at one page.
+    hiddenFor: ["student"],
     section: "Overview",
   },
 
@@ -289,6 +295,9 @@ export function visibleNav(
   hasRole: (...roles: string[]) => boolean,
 ): NavItem[] {
   return NAV.filter(
-    (item) => (!item.permission || can(item.permission)) && (!item.roles || hasRole(...item.roles)),
+    (item) =>
+      (!item.permission || can(item.permission)) &&
+      (!item.roles || hasRole(...item.roles)) &&
+      !(item.hiddenFor && hasRole(...item.hiddenFor)),
   );
 }

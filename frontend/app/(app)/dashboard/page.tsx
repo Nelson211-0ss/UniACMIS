@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { DonutChartCard } from "@/components/charts/DonutChartCard";
@@ -61,8 +62,16 @@ function initials(name: string): string {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user, can, hasRole } = useAuth();
   const isStudent = hasRole("student");
+
+  // A student's dashboard is `/my` — it carries their standing, deadlines and
+  // classes. Keeping a second one here would mean two homes showing the same
+  // few facts, with the "explore" grid below repeating their sidebar verbatim.
+  useEffect(() => {
+    if (isStudent) router.replace("/my");
+  }, [isStudent, router]);
   const isFinanceStaff = hasRole("finance");
   const isLibraryStaff = hasRole("library");
   const isHrStaff = hasRole("hr");

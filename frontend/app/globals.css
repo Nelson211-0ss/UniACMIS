@@ -2087,3 +2087,434 @@ button.field-toggle:hover:not(:disabled),
 button.menu__trigger:hover:not(:disabled) {
   background: var(--surface-sunken);
 }
+
+/* ------------------------------------------------- student dashboard
+ *
+ * Red and orange are the only accents used here, and they are used as
+ * *severity*, never decoration: red means money owed or a result blocked,
+ * orange means something heading that way. A student whose dashboard is
+ * entirely navy and teal has nothing outstanding, and that is the fastest
+ * thing this page can tell them.
+ */
+
+.attention {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  /* A warm hairline down the leading edge, so the section reads as "act on
+     this" before any of its text has been parsed. */
+  border-left: 3px solid var(--stat-orange);
+  border-radius: var(--radius);
+  padding: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--gap);
+  box-shadow: var(--shadow-sm);
+  animation: card-in 0.4s var(--ease) both;
+}
+
+.attention--clear {
+  border-left-color: var(--status-verified);
+}
+
+.attention__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.attention__head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.attention__head svg {
+  color: var(--stat-orange);
+  flex-shrink: 0;
+}
+
+.attention--clear .attention__head svg {
+  color: var(--status-verified);
+}
+
+.attention__count {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--stat-orange-container);
+  color: var(--stat-orange);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attention__clear-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.attention__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.attention__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  /* The per-item severity marker. Wider than a hairline so it still reads at a
+     glance in a list of four or five. */
+  border-left: 4px solid var(--border-strong);
+}
+
+.attention__item--critical {
+  background: var(--stat-red-container);
+  border-left-color: var(--stat-red);
+}
+
+.attention__item--warning {
+  background: var(--stat-orange-container);
+  border-left-color: var(--stat-orange);
+}
+
+.attention__item--info {
+  background: var(--surface-sunken);
+  border-left-color: var(--ink);
+}
+
+.attention__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.attention__item--critical .attention__text {
+  color: var(--stat-red);
+}
+
+.attention__item--warning .attention__text {
+  color: var(--stat-orange);
+}
+
+.attention__cta {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.attention__item--critical .attention__cta {
+  color: var(--stat-red);
+}
+
+.attention__item--warning .attention__cta {
+  color: var(--stat-orange);
+}
+
+/* The unit beside a counted figure — smaller, so "SSP" never competes with the
+   number it qualifies. */
+.stat__unit {
+  font-size: 0.55em;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+/* ---- today's classes ---- */
+
+.daylist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.daylist__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.daylist__item:last-child {
+  border-bottom: none;
+}
+
+.daylist__item.is-next {
+  /* Pulled out to the card's edge so the highlight reads as a band across the
+     row rather than a floating box. */
+  margin: 0 calc(var(--sp-6) * -1);
+  padding-left: var(--sp-6);
+  padding-right: var(--sp-6);
+  background: var(--seal-container);
+  border-bottom-color: transparent;
+}
+
+.daylist__time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  width: 58px;
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.daylist__time-end {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.daylist__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.daylist__course {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.daylist__meta {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.daylist__badge {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--on-seal-container);
+}
+
+/* ---- this semester's courses, each with its attendance standing ---- */
+
+.courselist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.courselist__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+.courselist__code {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.courselist__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.courselist__credits {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.courselist__meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-sunken-strong);
+  overflow: hidden;
+}
+
+.courselist__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--normal) var(--ease);
+}
+
+.courselist__fill--ok,
+.courselist__fill--waived {
+  background: var(--status-verified);
+}
+
+.courselist__fill--warn {
+  background: var(--stat-orange);
+}
+
+.courselist__fill--bad {
+  background: var(--stat-red);
+}
+
+.courselist__fill--none {
+  background: transparent;
+}
+
+.courselist__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: var(--sp-2);
+  font-size: 0.8125rem;
+}
+
+.courselist__pct {
+  font-weight: 600;
+}
+
+.courselist__pct--ok,
+.courselist__pct--waived {
+  color: var(--status-verified);
+}
+
+.courselist__pct--warn {
+  color: var(--stat-orange);
+}
+
+.courselist__pct--bad {
+  color: var(--stat-red);
+}
+
+/* ---- notices ---- */
+
+.noticelist {
+  list-style: none;
+  margin: 0 0 var(--sp-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.noticelist__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: var(--sp-4);
+  border-left: 2px solid var(--seal);
+}
+
+.noticelist__title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.noticelist__body {
+  font-size: 0.875rem;
+  color: var(--muted-strong);
+  /* Two lines is enough to judge relevance; the full text lives on the
+     announcements page. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.noticelist__date {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ---- narrow screens ----
+ *
+ * The action list stacks its call-to-action under the text rather than beside
+ * it: at 360px a "View invoices →" sitting on the same row squeezes the
+ * sentence it belongs to into three words per line.
+ */
+@media (max-width: 560px) {
+  .attention {
+    padding: var(--sp-4);
+  }
+
+  .attention__item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+
+  .attention__cta {
+    align-self: flex-start;
+  }
+
+  .daylist__item.is-next {
+    margin: 0 calc(var(--sp-4) * -1);
+    padding-left: var(--sp-4);
+    padding-right: var(--sp-4);
+  }
+
+  .courselist__head {
+    /* The title wraps to its own line so a long course name is readable
+       instead of truncated to a few characters. */
+    flex-wrap: wrap;
+    gap: var(--sp-1) var(--sp-2);
+  }
+
+  .courselist__title {
+    white-space: normal;
+    flex-basis: 100%;
+    order: 3;
+  }
+}
+
+/* A stat row that stays two-up on a phone instead of collapsing to one tall
+   column per figure. Four single-file tiles push everything below them off the
+   first screen, which for a dashboard defeats the point — the whole value is
+   seeing your standing without scrolling. */
+.grid--stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+@media (max-width: 560px) {
+  .grid--stats {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3);
+  }
+
+  .grid--stats .card {
+    padding: var(--sp-4);
+  }
+
+  /* Half-width tiles cannot hold a 1.875rem figure plus a currency unit
+     without wrapping mid-number. */
+  .grid--stats .stat__value {
+    font-size: 1.375rem;
+  }
+
+  .grid--stats .stat__label {
+    font-size: 0.6875rem;
+  }
+
+  .grid--stats .stat__foot {
+    font-size: 0.6875rem;
+  }
+}
