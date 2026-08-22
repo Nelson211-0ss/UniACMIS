@@ -84,9 +84,56 @@ make seed                     # roles, permissions, and demo data (development o
 | Mailpit (dev mail, `--profile dev-extras`) | http://localhost:8025 |
 | MinIO console (`--profile storage`) | http://localhost:9001 |
 
-`make seed` creates one account per role. Credentials are printed by the command and all accounts are
-flagged `must_change_password`. **`seed_demo` refuses to run when `DEBUG=False`** — it is development data,
-never production.
+`make seed` creates one account per role, all sharing the password below. Credentials are also printed by
+the command itself. Every account is flagged `must_change_password`, so the app will prompt for a new one
+at first sign-in. **`seed_demo` refuses to run when `DEBUG=False`** — it is development data, never
+production.
+
+**Password for every demo account:** `UniACMIS#Demo2026`
+
+| Email | Role | Portal / landing page |
+|---|---|---|
+| `registrar@demo.uniacmis.ss` | Registrar | `/dashboard` |
+| `finance@demo.uniacmis.ss` | Finance / Bursar | `/dashboard` |
+| `examinations@demo.uniacmis.ss` | Examinations Office | `/dashboard` |
+| `senate@demo.uniacmis.ss` | Senate / Exam Board | `/dashboard` |
+| `hr@demo.uniacmis.ss` | Human Resources | `/dashboard` |
+| `library@demo.uniacmis.ss` | Library | `/dashboard` |
+| `hostel@demo.uniacmis.ss` | Hostel | `/dashboard` |
+| `ict_admin@demo.uniacmis.ss` | ICT Administrator | `/dashboard` |
+| `management@demo.uniacmis.ss` | University Management | `/dashboard` |
+| `lecturer@demo.uniacmis.ss` | Lecturer | `/dashboard` |
+| `hod@demo.uniacmis.ss` | Head of Department | `/department` |
+| `student-demo@uniacmis.ss` | Student | `/my` |
+| `applicant@demo.uniacmis.ss` | Applicant | `/apply` |
+
+Each role lands on the page it actually has work in — a HoD on their department dashboard, a student on
+their own portal, an applicant tracking their admission — rather than a shared staff dashboard everyone
+sees regardless of what they can do there.
+
+`student-demo@uniacmis.ss` is linked to one of the seeded students, so `/my` shows real registrations,
+attendance and a fee balance right away. `applicant@demo.uniacmis.ss` signs in to a genuinely empty `/apply`
+on a fresh seed — admissions sits above the registry in the module layering (§ *Why it is built this way*),
+so the seeder cannot construct an `Application` without importing upward. A registrar filing one at
+`/admissions` on the applicant's behalf does not link it to their account either — that path is deliberately
+`source=staff_entry` with no `user`, for a paper form taken at the counter from someone who has no login yet.
+To see the applicant portal populated, give the demo account its own application via `make shell`:
+
+```python
+from apps.accounts.models import User
+from apps.admissions.services import create_application
+from apps.academics.models import AcademicYear
+from apps.curriculum.models import Programme
+
+user = User.objects.get(email="applicant@demo.uniacmis.ss")
+create_application(
+    programme_id=Programme.objects.first().pk,
+    intended_academic_year_id=AcademicYear.objects.filter(is_current=True).first().pk,
+    first_name="Demo", last_name="Applicant", gender="male",
+    source="self_service", applicant_user=user,
+    phone="+211900000000", email=user.email,
+)
+```
 
 ### Common commands
 

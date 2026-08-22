@@ -255,6 +255,7 @@ class Command(BaseCommand):
         programmes, versions = self._programmes(departments, year)
         self._courses(departments, versions)
         staff = self._staff(departments)
+        self._applicant()
         sponsors = self._sponsors()
         self._students(programmes, versions, year, sponsors, student_count, staff.get("registrar"))
 
@@ -277,6 +278,11 @@ class Command(BaseCommand):
             email = f"{role.code}@demo.uniacmis.ss"
             if User.objects.filter(email=email).exists():
                 self.stdout.write(f"  {role.code:<14} {email}")
+        # "student-demo", not "student" — see `_students()` for why the demo
+        # sign-in doesn't follow the `{role.code}@demo...` pattern every staff
+        # role above does.
+        if User.objects.filter(email="student-demo@uniacmis.ss").exists():
+            self.stdout.write(f"  {'student':<14} student-demo@uniacmis.ss")
         self.stdout.write("")
         self.stdout.write(
             self.style.WARNING(
@@ -573,6 +579,31 @@ class Command(BaseCommand):
             sponsors.append(sponsor)
         return sponsors
 
+    def _applicant(self) -> None:
+        """A login for the applicant portal, account only.
+
+        `apps.admissions` sits *above* `apps.registry` in the layering
+        (`convert_to_student` calls into registry, not the other way round),
+        so this seeder — living in registry — cannot construct an
+        `Application` without importing upward and breaking the layers
+        contract. The account exists so the sign-in and the empty-application
+        state are both real; a draft application for it is created through
+        the admissions workflow itself (`/admissions`, or the registrar demo
+        account), the same way a real applicant would arrive at one.
+        """
+        user, _ = User.objects.get_or_create(
+            email="applicant@demo.uniacmis.ss",
+            defaults={
+                "first_name": "Demo",
+                "last_name": "Applicant",
+                "is_active": True,
+                "must_change_password": True,
+            },
+        )
+        user.set_password(DEMO_PASSWORD)
+        user.save(update_fields=["password"])
+        grant_role(user, "applicant", reason="Demo seed")
+
     def _students(
         self,
         programmes: dict[str, Programme],
@@ -626,6 +657,29 @@ class Command(BaseCommand):
                 phone=f"+21192{2000000 + index}",
                 is_primary=True,
             )
+
+            # The first seeded student doubles as the portal sign-in demo — every
+            # other student is a registry record only (real students only get a
+            # login once admissions converts an application, which this seeder
+            # does not do). "student-demo", not "student1", so it never collides
+            # with the bio-data email `_students` already gives each row above,
+            # and so it reads as an account rather than a person's own address.
+            if index == 0:
+                portal_user, _ = User.objects.get_or_create(
+                    email="student-demo@uniacmis.ss",
+                    defaults={
+                        "first_name": first,
+                        "last_name": last,
+                        "phone": student.phone,
+                        "is_active": True,
+                        "must_change_password": True,
+                    },
+                )
+                portal_user.set_password(DEMO_PASSWORD)
+                portal_user.save(update_fields=["password"])
+                grant_role(portal_user, "student", reason="Demo seed")
+                student.user = portal_user
+                student.save(update_fields=["user"])
 
             # Every 5th student carries a stub fee hold, so /students/{id}/holds/
             # shows the blocked path without extra setup. Set explicitly, on the
